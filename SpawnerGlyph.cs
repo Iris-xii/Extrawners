@@ -149,13 +149,20 @@ public static class SpawnerGlyph {
       fractionOnBoard /* 0 = gone*/,
       shadowStrength /*shadow str*/, false /*light*/, null);
   }
+
+  public static void SpawnMolWithAnimation(Sim sim, // TODO!!!
+      bool firstHalf,
+      Molecule m,
+      PartSimState pss,
+      Part part) {
+  }
   public static void SpawnMolAsIfInput(Sim sim,
       bool firstHalf,
       Molecule m,
       PartSimState pss,
       Part part) {
     if (sim.Cycle() % 6 == 2 && firstHalf) {
-      sim.AddMolecule(m.ShiftedBy(part.method_1161()));
+      sim.AddMolecule(m.ShiftedBy(part.method_1161(), part.method_1163()));
     }
   }
 

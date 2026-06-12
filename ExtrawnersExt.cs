@@ -60,7 +60,7 @@ public static class ExtrawnersExt {
 
   public static SolutionEditorBase SEB(this Sim sim) => sim.field_3818;
   public static void AddMolecule(this Sim sim,Molecule m) => sim.field_3823.Add(m);
-  public static Molecule ShiftedBy(this Molecule m,HexIndex shift) => m.method_1117(shift);
+  public static Molecule ShiftedBy(this Molecule m,HexIndex shift,HexRotation rot) => m.method_1115(rot).method_1117(shift);
   public static List<Part> PartList(this Solution solution) => solution.field_3919;
   public static List<Part> PartList(this Sim sim) => sim.field_3818.method_502().field_3919;
   public static int Cycle(this Sim sim) => sim.method_1818();
