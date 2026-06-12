@@ -34,7 +34,8 @@ public static class SpawnerGlyph {
   public static Texture genericBase = Brimstone.API.GetTexture();
 
   public static PartType[] partTypes = new PartType[0];
-  public static GlyphData.Renderer glyphRenderer = (_, _, _, _, _) => { };
+  public static GlyphData.RenderFn glyphRenderer = (_, _, _, _, _) => { };
+  public static GlyphData.LogicFn glyphLogic = (_, _) => { };
 
   internal static PartType SpawnerPartTypeNew(int number) => new() {
     field_1528 = PART_ID + $"-{number}", // ID
@@ -80,57 +81,57 @@ public static class SpawnerGlyph {
   }
 
 
-  public static void DrawHexes<H>(Part part,
+  public static void DrawFullBaseFromMol(Part part,
       Vector2 pos,
       SolutionEditorBase editor,
       class_195 renderer,
-      H hexes)
-      where H : IEnumerable<HexIndex> {
+      Molecule mol) {
+    var hexes = mol.method_1100().Select(a => a.Key);
     foreach (var hex in hexes) {
-      DrawHexBase(part, pos, editor, renderer, hexes, hex);
+      DrawBase(part, pos, editor, renderer, hex);
     }
-    foreach (var hex in hexes) {
-      DrawHexBonds(part, pos, editor, renderer, hexes, hex);
+    foreach (var c277 in mol.method_1101()) {
+      var from = c277.field_2187;
+      var to = c277.field_2188;
+      DrawBaseBond(part, pos, editor, renderer, from: from, to: to);
     }
   }
 
-  public static void DrawHexBonds<H>(Part part,
+  public static void DrawBaseBond(Part part,
       Vector2 pos,
       SolutionEditorBase seb,
       class_195 renderer,
-      H allHexes,
-      HexIndex hexPos)
-      where H : IEnumerable<HexIndex> {
-    float angleFwd = class_187.field_1742.method_492((hexPos + new HexIndex(1, 0)) - hexPos).Angle();
-    float angleBack = class_187.field_1742.method_492((hexPos + new HexIndex(-1, 0)) - hexPos).Angle();
-    if (allHexes.Contains(hexPos + new HexIndex(1, 0))) {
-      renderer.method_526(pipe_bond,
-        hexPos,
-        Vector2.Zero,
-        new Vector2(-23f, 20f),
-        angleFwd);
-    }
-    if (allHexes.Contains(hexPos + new HexIndex(-1, 0))) {
-      //renderer.method_526(pipe_bond,
-      //  hexPos,
-      //  Vector2.Zero,
-      //  new Vector2(-23f, 20f),
-      //  angleBack);
-    }
+      HexIndex from,
+      HexIndex to,
+      float offset_x = -23f,
+      float offset_y = 24f) {
+    float angle = class_187.field_1742.method_492(to - from).Angle();
+    var OFFSET = new Vector2(offset_x, offset_y); //new Vector2(-23f, 20f);
+    renderer.method_526(pipe_bond,
+      from,
+      Vector2.Zero,
+      OFFSET,
+      angle);
   }
-  public static void DrawHexBase<H>(Part part,
+  public static void DrawBase(Part part,
       Vector2 pos,
       SolutionEditorBase seb,
       class_195 renderer,
-      H allHexes,
-      HexIndex hexPos)
-      where H : IEnumerable<HexIndex> {
+      HexIndex hexPos) {
     //renderer.method_530(base_empty_fuzz, hexPos, 0f);
     renderer.method_530(pipe_base, hexPos, 0f);
     renderer.method_528(pipe_ring, hexPos, Vector2.Zero);
     var rotation = PartRotation(seb, part);
     var rotationF = rotation.ToRadians();
 
+  }
+  public static void DrawMolAsIfInput(Molecule m,
+    PartSimState pss,
+    Vector2 rendererPos,
+    Part part,
+    bool? maybeSimStarted = null) {
+    bool simStarted = maybeSimStarted ?? pss.GetDefaultDynState().simStarted;
+    if (!simStarted) { DrawMol(m, pss, rendererPos, part); }
   }
   public static void DrawMol(Molecule m,
       PartSimState pss,
@@ -147,6 +148,15 @@ public static class SpawnerGlyph {
       alpha /*alpha*/,
       fractionOnBoard /* 0 = gone*/,
       shadowStrength /*shadow str*/, false /*light*/, null);
+  }
+  public static void SpawnMolAsIfInput(Sim sim,
+      bool firstHalf,
+      Molecule m,
+      PartSimState pss,
+      Part part) {
+    if (sim.Cycle() % 6 == 2 && firstHalf) {
+      sim.AddMolecule(m.ShiftedBy(part.method_1161()));
+    }
   }
 
   private static void RendererOld(Part part,
@@ -191,6 +201,9 @@ public static class SpawnerGlyph {
       });
       QApi.AddPartTypeToPanel(pType, false);
     }
+    QApi.RunAfterCycle((sim, firstHalf) => {
+      SpawnerGlyph.glyphLogic(sim, firstHalf);
+    });
     partTypes = partTypesList.ToArray();
   }
 

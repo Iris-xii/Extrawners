@@ -22,14 +22,16 @@ public sealed record class GlyphData {
   /// it won't spawn)
   /// </summary>
   public List<HexIndex> origins = new(); 
-  public delegate void PartTypeModify(int glyphIndex,PartType[] partTypes);
-  public PartTypeModify partTypeModify = (_i,_t) => {};
-  public delegate void Renderer(int glyphIndex,
+  public delegate void PartTypeModify(PartType[] partTypes);
+  public PartTypeModify partTypeModify = (_t) => {};
+  public delegate void RenderFn(int glyphIndex,
       Part part,
       Vector2 pos,
       SolutionEditorBase seb,
       class_195 renderer);
-  public Renderer partRenderer = (_,_,_,_,_) => {};
+  public RenderFn partRenderer = (_,_,_,_,_) => {};
+  public delegate void LogicFn(Sim sim,bool firstHalf);
+  public LogicFn glyphLogic = (_,_) => {};
 
   /*
   private Molecule LastMol() {

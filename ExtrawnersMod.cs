@@ -62,34 +62,8 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
       typeof(Solution).GetMethod("ApplyChanges", BF.Public | BF.Static),
       HookApplyChanges
     );
-    {
-      var m0 = new Molecule()
-      .Atom("extransmutations:ichor", 0, 0)
-      .Atom("extransmutations:ichor", 1, 0)
-      .Atom("extransmutations:ichor", 2, 0)
-      .Bond(BondKinds.normal, 1, 0, 2, 0);
-      var m1 = new Molecule()
-      .Atom("salt", 0, 0)
-      .Atom("salt", 1, 0)
-      .Bond(BondKinds.triplex_ogr, 0, 0, 1, 0);
-      puzzleGlyphData.Add("c248888215006990", new() {
-        origins = new() { new(0, 0), new(3, 3) },
-        partTypeModify = (index, partTypes) => {
-          partTypes[0].field_1540 = m0.method_1100().Select(a => a.Key).ToArray();
-          partTypes[1].field_1540 = m1.method_1100().Select(a => a.Key).ToArray();
-        },
-        partRenderer = (glyphIndex, part, pos, seb, renderer) => {
-          if (glyphIndex == 0) {
-            SpawnerGlyph.DrawHexes(part, pos, seb, renderer, m0.method_1100().Select(a => a.Key));
-            //SpawnerGlyph.DrawMol(m0, PSS(seb, part), pos, part);
-          }
-          else if (glyphIndex == 1) {
-            SpawnerGlyph.DrawHexes(part, pos, seb, renderer, m1.method_1100().Select(a => a.Key));
-            //SpawnerGlyph.DrawMol(m1, PSS(seb, part), pos, part);
-          }
-        },
-      });
-    }
+
+    DoExamplePuzzles();
   }
 
   public override void Unload() {
@@ -116,9 +90,10 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
       }
       SpawnerGlyph.Cleanup();
       SpawnerGlyph.glyphRenderer = glyphData.partRenderer;
+      SpawnerGlyph.glyphLogic = glyphData.glyphLogic;
       for (int i = 0; i < glyphData.origins.Count; i++) {
         var origin = glyphData.origins[i];
-        glyphData.partTypeModify(glyphIndex: i, SpawnerGlyph.partTypes);
+        glyphData.partTypeModify(SpawnerGlyph.partTypes);
 
         HexIndex position = origin;
         HexRotation rotation = new();
@@ -144,10 +119,8 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
       }
       SpawnerGlyph.Cleanup();
       SpawnerGlyph.glyphRenderer = glyphData.partRenderer;
-      for (int i = 0; i < glyphData.origins.Count; i++) {
-        var origin = glyphData.origins[i];
-        glyphData.partTypeModify(glyphIndex: i, SpawnerGlyph.partTypes);
-      }
+      SpawnerGlyph.glyphLogic = glyphData.glyphLogic;
+      glyphData.partTypeModify(SpawnerGlyph.partTypes);
     }
     //Puzzle puzzle = solution.method_1934();
     //var perms = puzzle.CustomPermissions ?? new();

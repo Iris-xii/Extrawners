@@ -3,6 +3,7 @@ using Quintessential;
 using MonoMod.RuntimeDetour;
 using MonoMod.Cil;
 using Quintessential.Serialization;
+using MonoMod.Utils;
 
 namespace Extrawners;
 
@@ -56,6 +57,47 @@ public static class ExtrawnersExt {
   public static HexRotation PartRotation(SolutionEditorBase seb, Part part) => seb.method_507().method_481(part).field_2726;
   public static Solution Solution(this SolutionEditorBase seb) => seb.method_502();
   public static PartType Type(this Part part) => part.method_1159();
+
+  public static SolutionEditorBase SEB(this Sim sim) => sim.field_3818;
+  public static void AddMolecule(this Sim sim,Molecule m) => sim.field_3823.Add(m);
+  public static Molecule ShiftedBy(this Molecule m,HexIndex shift) => m.method_1117(shift);
+  public static List<Part> PartList(this Solution solution) => solution.field_3919;
+  public static List<Part> PartList(this Sim sim) => sim.field_3818.method_502().field_3919;
+  public static int Cycle(this Sim sim) => sim.method_1818();
+
+  public static T GetDynState<T>(this PartSimState pss, string entry) where T : new() {
+    DynamicData dyn_pss = new(pss);
+    object? maybeState = dyn_pss.Get(entry);
+    T state;
+    if (maybeState is not null) {
+      state = (T)maybeState;
+    }
+    else {
+      state = new();
+      dyn_pss.Set(entry, state);
+    }
+    return state;
+  }
+  public static void SetDynState<T>(this PartSimState pss, string entry, T to) {
+    DynamicData dyn_pss = new(pss);
+    dyn_pss.Set(entry, to);
+  }
+  public static ExtrawnersDynState GetDefaultDynState(this PartSimState pss) => pss.GetDynState<ExtrawnersDynState>("defaultState");
+
+  /// <summary> A handful of things utilize a few 'dynamic' states by default if nothing else
+  /// is specified. <br></br><br></br>
+  /// Call this on every Extrawners part that utilizes these to reset them. </summary>
+  public static void AutoStatesReset(Sim sim, bool firstHalf, Part part) {
+    if (sim.Cycle() == 0 && firstHalf) {
+      PSS(sim.SEB(),part).SetDynState("defaultState", new ExtrawnersDynState() {
+        simStarted = true,
+      });
+    }
+  }
+
+  public class ExtrawnersDynState {
+    public bool simStarted = false;
+  }
 
   // class_187: Hex -> Vector tools?
 
