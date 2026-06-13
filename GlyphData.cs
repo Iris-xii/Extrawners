@@ -15,7 +15,20 @@ using static ExtrawnersExt;
 using System.Runtime.CompilerServices;
 using Quintessential;
 
+using static LogicWhen;
+
 #nullable enable
+public enum LogicWhen {
+  PRE_CYCLE,
+  FIRST_HALF,
+  SECOND_HALF,
+  WELL_AFTER_CYCLE,
+}
+public static class LogicWhenExt {
+  public static bool FireGlyph(this LogicWhen when) => when == FIRST_HALF || when == SECOND_HALF;
+}
+
+
 public sealed record class GlyphData {
   /// <summary>
   /// List of origins for every glyph. An entry here implies the existence of said glyph. (Otherwise
@@ -30,12 +43,9 @@ public sealed record class GlyphData {
       SolutionEditorBase seb,
       class_195 renderer);
   public RenderFn partRenderer = (_,_,_,_,_) => {};
-  public delegate void PreCycleFn(Sim sim);
-  public PreCycleFn glyphPreCycle = (_) => {};
-  public delegate void AfterCycle(Sim sim,bool firstHalf);
-  public AfterCycle glyphAfterCycle = (_,_) => {};
-  public delegate void WellAfterCycleFn(Sim sim);
-  public WellAfterCycleFn glyphWellAfterCycle = (_) => {};
+
+  public delegate void LogicFn(Sim sim,LogicWhen when);
+  public LogicFn logicFn = (_,_) => {};
 
   /*
   private Molecule LastMol() {

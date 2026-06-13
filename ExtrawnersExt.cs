@@ -51,7 +51,6 @@ public static class ExtrawnersExt {
   }
   public static Molecule Bond(this Molecule m, enum_126 kind, int a, int b, int c, int d) => m.Bond(kind, new(a, b), new(c, d));
 
-
   public static PartSimState PSS(SolutionEditorBase seb, Part part) => seb.method_507().method_481(part);
   public static HexRotation PartRotation(PartSimState pss) => pss.field_2726;
   public static HexRotation PartRotation(SolutionEditorBase seb, Part part) => seb.method_507().method_481(part).field_2726;
@@ -61,6 +60,7 @@ public static class ExtrawnersExt {
 
   public static SolutionEditorBase SEB(this Sim sim) => sim.field_3818;
   public static void AddMolecule(this Sim sim, Molecule m) => sim.field_3823.Add(m);
+  public static bool RemoveMolecule(this Sim sim, Molecule m) => sim.field_3823.Remove(m);
   public static Molecule ShiftedBy(this Molecule m, Part part) => m.ShiftedBy(part.method_1161(), part.method_1163());
   public static Molecule ShiftedBy(this Molecule m, HexIndex shift, HexRotation rot) => m.method_1115(rot).method_1117(shift);
   public static List<Part> PartList(this Solution solution) => solution.field_3919;
@@ -70,7 +70,19 @@ public static class ExtrawnersExt {
 
   internal static Solution m1817(this Sim sim) => sim.field_3818.method_502();
   internal static Func<Sim, Molecule, HashSet<HexIndex>, bool> m1837 =
-      typeof(Sim).GetMethod("method_1837", BF.NonPublic | BF.Instance).CreateDelegate<Func<Sim, Molecule, HashSet<HexIndex>, bool>>();
+    typeof(Sim).GetMethod("method_1837", BF.NonPublic | BF.Instance).CreateDelegate<Func<Sim, Molecule, HashSet<HexIndex>, bool>>();
+  internal static Func<Sim.class_403, HexIndex, bool> c_method_1860 =
+    typeof(Sim.class_403).GetMethod("method_1860", BF.NonPublic | BF.Instance).CreateDelegate<Func<Sim.class_403, HexIndex, bool>>();
+
+  public static Func<Molecule, Molecule, bool> molecMatchesExact =
+      typeof(Sim).GetMethod("method_1844", BF.NonPublic | BF.Static).CreateDelegate<Func<Molecule, Molecule, bool>>();
+  public static bool MoleculeHeld(this Sim sim, Molecule molec) {
+    return sim.HeldGrippers.Any((gripper) => {
+      var pss = PSS(sim.SEB(),gripper);
+      var maybeHolding = pss.field_2729;
+      return maybeHolding.method_1085() && (maybeHolding.method_1087() == molec);
+    });
+  }
   public static bool DoesNotOverlap(Sim sim, Part item2, Molecule m) {
     HashSet<HexIndex> hashSet = new();
     foreach (Molecule item in sim.field_3823) {
@@ -112,16 +124,17 @@ public static class ExtrawnersExt {
     if (sim.Cycle() == 0) {
       pss.SetDynState("defaultState", new ExtrawnersDynState() {
         simStarted = true,
-        animatingMolecule = null, 
+        animatingMolecule = null,
       });
-    } else {
+    }
+    else {
       var state = pss.GetDefaultDynState();
       state.animatingMolecule = null;
     }
   }
   public record class ExtrawnersDynState {
     public bool simStarted = false;
-    public Molecule? animatingMolecule = null; 
+    public Molecule? animatingMolecule = null;
   }
 
   // class_187: Hex -> Vector tools?

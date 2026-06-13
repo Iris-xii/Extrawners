@@ -18,6 +18,8 @@ using VanillaAtoms = Brimstone.API.VanillaAtoms;
 using BF = System.Reflection.BindingFlags;
 using static ExtrawnersExt;
 
+using static LogicWhen;
+
 public sealed partial class ExtrawnersMod {
 
   public static void DoExamplePuzzles() {
@@ -44,13 +46,31 @@ public sealed partial class ExtrawnersMod {
         .Bond(BondKinds.normal, 2, 0, 2, -1)
         .Bond(BondKinds.normal, 2, -1, 1, -1)
         .Bond(BondKinds.normal, 1, -1, 0, 0);
+      var m3 = new Molecule()
+        .Atom("water", 0, 0)
+        .Atom("water", 0, 1)
+        .Atom("water", 1, 1)
+        .Atom("water", 2, 0)
+        .Atom("water", 1, -1)
+        .Atom("water", 2, -1)
+        .Atom("salt", 2, -2)
+        .Bond(BondKinds.normal, 0, 0, 0, 1)
+        .Bond(BondKinds.normal, 0, 1, 1, 1)
+        .Bond(BondKinds.normal, 1, 1, 2, 0)
+        .Bond(BondKinds.normal, 2, 0, 2, -1)
+        .Bond(BondKinds.normal, 2, -1, 1, -1)
+        .Bond(BondKinds.normal, 1, -1, 0, 0)
+        .Bond(BondKinds.normal, 2, -1, 2, -2)
+        .Bond(BondKinds.normal, 1, -1, 2, -2);
+      m2 = m3;
 
       puzzleGlyphData.Add("c248888215006990", new() {
-        origins = new() { new(0, 0), new(3, 3), new(-4, 0) },
+        origins = new() { new(0, 0), new(3, 3), new(-4, 0), new(4, 2) },
         partTypeModify = (partTypes) => {
           partTypes[0].field_1540 = m0.method_1100().Select(a => a.Key).ToArray();
           partTypes[1].field_1540 = m1.method_1100().Select(a => a.Key).ToArray();
           partTypes[2].field_1540 = m2.method_1100().Select(a => a.Key).ToArray();
+          partTypes[3].field_1540 = m3.method_1100().Select(a => a.Key).ToArray();
         },
         partRenderer = (glyphIndex, part, pos, seb, renderer) => {
           var pss = PSS(seb, part);
@@ -66,33 +86,22 @@ public sealed partial class ExtrawnersMod {
             SpawnerGlyph.DrawFullBaseFromMol(part, pos, seb, renderer, m2);
             SpawnerGlyph.DrawMolAsIfInput(m2, seb, PSS(seb, part), pos, part);
           }
-        },
-        glyphPreCycle = (sim) => {
-          foreach (var part in sim.PartList()) {
-            AutoStatesReset(sim, part);
-            var pss = PSS(sim.SEB(), part);
-            if (part.Type() == SpawnerGlyph.partTypes[2]) {
-              SpawnerGlyph.InitAndSpawnAsIfInput(sim, m2, pss, part);
-            }
+          else if (glyphIndex == 3) {
+            SpawnerGlyph.DrawFullBaseFromMol(part, pos, seb, renderer, m3);
+            SpawnerGlyph.DrawMolAsIfOutput(m3, seb, PSS(seb, part), pos, part);
           }
         },
-        glyphAfterCycle = (sim, half) => {
+        logicFn = (sim, when) => {
           foreach (var part in sim.PartList()) {
             var pss = PSS(sim.SEB(), part);
             if (part.Type() == SpawnerGlyph.partTypes[2]) {
-              SpawnerGlyph.AfterCycleAsIfInput(sim, m2, pss, part, half);
+              SpawnerGlyph.AsIfInput(sim, m2, pss, part, when);
+            }
+            if (part.Type() == SpawnerGlyph.partTypes[3]) {
+              SpawnerGlyph.AsIfOutput(sim, m3, pss, part, when);
             }
           }
         },
-        glyphWellAfterCycle = (sim) => {
-          foreach (var part in sim.PartList()) {
-            var pss = PSS(sim.SEB(), part);
-            if (part.Type() == SpawnerGlyph.partTypes[2]) {
-              SpawnerGlyph.WellAfterCycleAsIfInput(sim, m2, pss, part);
-            }
-          }
-        }
-
       });
     }
   }

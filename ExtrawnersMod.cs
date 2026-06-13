@@ -62,8 +62,8 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
       typeof(Solution).GetMethod("ApplyChanges", BF.Public | BF.Static),
       HookApplyChanges
     );
-		hook_Sim_method_1828 = new Hook(typeof(Sim).GetMethod("method_1828",BF.NonPublic |BF.Instance), OnSimMethod1828_SpawnScaffolds);
-    hook_Sim_method_1836 = new Hook(typeof(Sim).GetMethod("method_1836",BF.NonPublic |BF.Instance), OnSimMethod_1836_WellAfterCycle);
+    hook_Sim_method_1828 = new Hook(typeof(Sim).GetMethod("method_1828", BF.NonPublic | BF.Instance), OnSimMethod1828_SpawnScaffolds);
+    hook_Sim_method_1836 = new Hook(typeof(Sim).GetMethod("method_1836", BF.NonPublic | BF.Instance), OnSimMethod_1836_WellAfterCycle);
 
     DoExamplePuzzles();
   }
@@ -90,11 +90,7 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
       if (glyphData.origins.Count > SpawnerGlyph.MAX_SPAWNERS) {
         throw new ArgumentOutOfRangeException($"Only {SpawnerGlyph.MAX_SPAWNERS} max spawner glyphs are allowed at a time. Bug me (Iris) to increase this if you need more.");
       }
-      SpawnerGlyph.Cleanup();
-      SpawnerGlyph.glyphRenderer = glyphData.partRenderer;
-      SpawnerGlyph.glyphPreCycle = glyphData.glyphPreCycle;
-      SpawnerGlyph.glyphAfterCycle = glyphData.glyphAfterCycle;
-      SpawnerGlyph.glyphWellAfterCycle = glyphData.glyphWellAfterCycle;
+      GlyphDataSetupShared(glyphData);
       for (int i = 0; i < glyphData.origins.Count; i++) {
         var origin = glyphData.origins[i];
         glyphData.partTypeModify(SpawnerGlyph.partTypes);
@@ -109,6 +105,12 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     }
   }
 
+  internal static void GlyphDataSetupShared(GlyphData glyphData) {
+    SpawnerGlyph.Cleanup();
+    SpawnerGlyph.glyphRenderer = glyphData.partRenderer;
+    SpawnerGlyph.logicFn = glyphData.logicFn; 
+  }
+
   public Hook puzzleinfoscreen_method_1275;
   internal static void OnSolLoad(
       Action<PuzzleInfoScreen, Solution> orig,
@@ -121,11 +123,7 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
       if (glyphData.origins.Count > SpawnerGlyph.MAX_SPAWNERS) {
         throw new ArgumentOutOfRangeException($"Only {SpawnerGlyph.MAX_SPAWNERS} max spawner glyphs are allowed at a time. Bug me (Iris) to increase this if you need more.");
       }
-      SpawnerGlyph.Cleanup();
-      SpawnerGlyph.glyphRenderer = glyphData.partRenderer;
-      SpawnerGlyph.glyphPreCycle = glyphData.glyphPreCycle;
-      SpawnerGlyph.glyphAfterCycle = glyphData.glyphAfterCycle;
-      SpawnerGlyph.glyphWellAfterCycle = glyphData.glyphWellAfterCycle;
+      GlyphDataSetupShared(glyphData);
       glyphData.partTypeModify(SpawnerGlyph.partTypes);
     }
     //Puzzle puzzle = solution.method_1934();
@@ -147,18 +145,18 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     orig(self, param_4617);
   }
 
-	public static Hook hook_Sim_method_1828;
+  public static Hook hook_Sim_method_1828;
   public delegate void orig_Sim_method_1828(Sim sim); //code that runs every cycle but before parts are processed
   private static void OnSimMethod1828_SpawnScaffolds(orig_Sim_method_1828 orig, Sim sim) {
     orig(sim);
-    SpawnerGlyph.glyphPreCycle(sim);
+    SpawnerGlyph.logicFn(sim,LogicWhen.PRE_CYCLE);
   }
 
   public static Hook hook_Sim_method_1836;
   public delegate void orig_Sim_method_1836(Sim sim); //code that runs every cycle but before parts are processed
   private static void OnSimMethod_1836_WellAfterCycle(orig_Sim_method_1836 orig, Sim sim) {
     orig(sim);
-    SpawnerGlyph.glyphWellAfterCycle(sim);
+    SpawnerGlyph.logicFn(sim,LogicWhen.WELL_AFTER_CYCLE);
   }
 
 

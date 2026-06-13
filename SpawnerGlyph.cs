@@ -17,6 +17,8 @@ using System;
 
 using static ExtrawnersExt;
 
+using static LogicWhen;
+
 #nullable enable
 public static class SpawnerGlyph {
 
@@ -31,13 +33,11 @@ public static class SpawnerGlyph {
   public static readonly Texture pipe_base = class_235.method_615("textures/parts/pipe_base");
   public static readonly Texture pipe_bond = class_235.method_615("textures/parts/pipe_bond");
   public const string PART_ID = "extrawners-glyph";
-  public static Texture genericBase = Brimstone.API.GetTexture();
+  internal static Texture genericBase = Brimstone.API.GetTexture();
 
   public static PartType[] partTypes = new PartType[0];
   internal static GlyphData.RenderFn glyphRenderer = (_, _, _, _, _) => { };
-  internal static GlyphData.PreCycleFn glyphPreCycle = (_) => { };
-  internal static GlyphData.AfterCycle glyphAfterCycle = (_, _) => { };
-  internal static GlyphData.WellAfterCycleFn glyphWellAfterCycle = (_) => { };
+  internal static GlyphData.LogicFn logicFn = (_, _) => { };
 
   internal static PartType SpawnerPartTypeNew(int number) => new() {
     field_1528 = PART_ID + $"-{number}", // ID
@@ -127,7 +127,7 @@ public static class SpawnerGlyph {
     var rotationF = rotation.ToRadians();
 
   }
-  public static void DrawMolAsIfInput(Molecule m,
+  public static void DrawMolAsIfInput(Molecule rawM,
     SolutionEditorBase seb,
     PartSimState pss,
     Vector2 rendererPos,
@@ -137,10 +137,18 @@ public static class SpawnerGlyph {
     var state = pss.GetDefaultDynState();
     Molecule? animateMolecule = maybeAnimateMolecule ?? state.animatingMolecule;
     bool simStarted = maybeSimStarted ?? state.simStarted;
-    if (!simStarted) { DrawMol(m, pss, rendererPos, part); }
+    if (!simStarted) { DrawMol(rawM, pss, rendererPos, part); }
     if (animateMolecule is not null) {
-      DrawMol(m, pss, rendererPos, part, fractionOnBoard: seb.AnimTime());
+      DrawMol(rawM, pss, rendererPos, part, fractionOnBoard: seb.AnimTime());
     }
+  }
+  public static void DrawMolAsIfOutput(Molecule rawM,
+      SolutionEditorBase seb,
+      PartSimState pss,
+      Vector2 rendererPos,
+      Part part) {
+    DrawMol(rawM, pss, rendererPos, part, shadowStrength: 0f, alpha: 0.4f);
+
   }
   public static void DrawMol(Molecule rawM,
       PartSimState pss,
@@ -159,7 +167,7 @@ public static class SpawnerGlyph {
       shadowStrength /*shadow str*/, false /*light*/, null);
   }
 
-  public static void SpawnAnimation(Sim sim,
+  public static void QueueMolAnimation(Sim sim,
       Molecule rawM,
       PartSimState pss,
       Part part) {
@@ -173,37 +181,67 @@ public static class SpawnerGlyph {
     var shifted = rawM.ShiftedBy(part);
     sim.AddMolecule(shifted);
   }
-  public static void AfterCycleAsIfInput(Sim sim,
+  public static void AsIfInput(Sim sim,
     Molecule rawM,
     PartSimState pss,
     Part part,
-    bool firstHalf) {
+    LogicWhen when,
+    bool doAutoStatesReset = true) {
     var shifted = rawM.ShiftedBy(part);
-    if (DoesNotOverlap(sim, part, shifted)) {
-      sim.AddMolecule(shifted);
-      //SpawnAnimation(sim,rawM,pss,part);
+    if (when == PRE_CYCLE) {
+      if (doAutoStatesReset) { AutoStatesReset(sim, part); }
+      if (DoesNotOverlap(sim, part, shifted)) {
+        if (sim.Cycle() == 0) {
+          sim.AddMolecule(shifted);
+        }
+      }
     }
-  }
-  public static void WellAfterCycleAsIfInput(Sim sim,
-      Molecule rawM,
-      PartSimState pss,
-      Part part) {
-    var shifted = rawM.ShiftedBy(part);
-    if (DoesNotOverlap(sim, part, shifted)) {
-      SpawnAnimation(sim,rawM,pss,part);
-      //sim.AddMolecule(shifted);
-    }
-  }
-  public static void InitAndSpawnAsIfInput(Sim sim,
-      Molecule rawM,
-      PartSimState pss,
-      Part part) {
-    var shifted = rawM.ShiftedBy(part);
-    if (DoesNotOverlap(sim, part, shifted)) {
-      if (sim.Cycle() == 0) {
+    else if (when.FireGlyph()) {
+      if (DoesNotOverlap(sim, part, shifted)) {
         sim.AddMolecule(shifted);
       }
     }
+    else if (when == WELL_AFTER_CYCLE) {
+      if (DoesNotOverlap(sim, part, shifted)) {
+        QueueMolAnimation(sim, rawM, pss, part);
+      }
+    }
+  }
+  public static void AsIfOutput(Sim sim,
+    Molecule rawM,
+    PartSimState pss,
+    Part part,
+    LogicWhen when,
+    bool doAutoStatesReset = true) {
+    if (when == PRE_CYCLE) {
+      if (doAutoStatesReset) { AutoStatesReset(sim, part); }
+    }
+    else if (when.FireGlyph()) {
+      if (ShouldAcceptMol(sim, rawM, pss, part, out var accepted)) {
+        sim.RemoveMolecule(accepted);
+      }
+    }
+    else if (when == WELL_AFTER_CYCLE) {
+      if (ShouldAcceptMol(sim, rawM, pss, part, out _)) {
+        QueueMolAnimation(sim, rawM, pss, part);
+      }
+    }
+  }
+  public static bool ShouldAcceptMol(Sim sim,
+      Molecule rawTemplateM,
+      PartSimState pss,
+      Part part,
+      out Molecule accepted) {
+    var seb = sim.SEB();
+    var templateShifted = rawTemplateM.ShiftedBy(part);
+    foreach (var m in sim.field_3823) {
+      if (molecMatchesExact(m, templateShifted) && !sim.MoleculeHeld(m)) {
+        accepted = m;
+        return true;
+      }
+    }
+    accepted = null!;
+    return false;
   }
 
   private static void RendererOld(Part part,
@@ -224,13 +262,6 @@ public static class SpawnerGlyph {
     //  Editor.method_925(m.method_1115(pss.field_2726), pos, -part.method_1161(), 0f /*rotation*/, 1f /*alpha*/, 1f /* 0 = gone*/, 1f /*shadow str*/, false /*light*/, null);
     //}
   }
-  private static class_236 method_1989(SolutionEditorBase seb, Part param_5518, Vector2 param_5543) {
-    return seb.method_1990(param_5518, param_5543, seb.method_504());
-  }
-  private static Vector2 method_1999(class_236 param_5571, HexIndex param_5572) {
-    return param_5571.field_1984 + class_187.field_1742.method_492(param_5572).Rotated(param_5571.field_1985);
-  }
-
   public const int MAX_SPAWNERS = 8;
   internal static void LoadPuzzleContent() {
     List<PartType> partTypesList = new();
@@ -249,7 +280,8 @@ public static class SpawnerGlyph {
       QApi.AddPartTypeToPanel(pType, false);
     }
     QApi.RunAfterCycle((sim, firstHalf) => {
-      glyphAfterCycle(sim, firstHalf);
+      if (firstHalf) { logicFn(sim, LogicWhen.FIRST_HALF); }
+      if (!firstHalf) { logicFn(sim, LogicWhen.SECOND_HALF); }
     });
     partTypes = partTypesList.ToArray();
   }
