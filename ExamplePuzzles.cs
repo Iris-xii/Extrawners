@@ -88,7 +88,7 @@ public sealed partial class ExtrawnersMod {
           }
           else if (glyphIndex == 3) {
             SpawnerGlyph.DrawFullBaseFromMol(part, pos, seb, renderer, m3);
-            SpawnerGlyph.DrawMolAsIfOutput(m3, seb, PSS(seb, part), pos, part);
+            SpawnerGlyph.DrawMolAsIfOutput(m3, seb, PSS(seb, part), renderer, pos, part);
           }
         },
         logicFn = (sim, when) => {

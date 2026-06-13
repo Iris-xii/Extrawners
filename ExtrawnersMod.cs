@@ -62,6 +62,9 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
       typeof(Solution).GetMethod("ApplyChanges", BF.Public | BF.Static),
       HookApplyChanges
     );
+    hook_sim_method_1825 = new Hook(
+      typeof(Sim).GetMethod("method_1825", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public),
+      OnSimMethod1825);
     hook_Sim_method_1828 = new Hook(typeof(Sim).GetMethod("method_1828", BF.NonPublic | BF.Instance), OnSimMethod1828_SpawnScaffolds);
     hook_Sim_method_1836 = new Hook(typeof(Sim).GetMethod("method_1836", BF.NonPublic | BF.Instance), OnSimMethod_1836_WellAfterCycle);
 
@@ -75,6 +78,8 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     hook_GameLogic_method_946 = null;
     hookApplyChanges.Dispose();
     hookApplyChanges = null;
+    hook_sim_method_1825.Dispose();
+    hook_sim_method_1825 = null;
   }
 
   public Hook hookApplyChanges = null;
@@ -108,7 +113,7 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
   internal static void GlyphDataSetupShared(GlyphData glyphData) {
     SpawnerGlyph.Cleanup();
     SpawnerGlyph.glyphRenderer = glyphData.partRenderer;
-    SpawnerGlyph.logicFn = glyphData.logicFn; 
+    SpawnerGlyph.logicFn = glyphData.logicFn;
   }
 
   public Hook puzzleinfoscreen_method_1275;
@@ -149,15 +154,30 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
   public delegate void orig_Sim_method_1828(Sim sim); //code that runs every cycle but before parts are processed
   private static void OnSimMethod1828_SpawnScaffolds(orig_Sim_method_1828 orig, Sim sim) {
     orig(sim);
-    SpawnerGlyph.logicFn(sim,LogicWhen.PRE_CYCLE);
+    SpawnerGlyph.logicFn(sim, LogicWhen.PRE_CYCLE);
   }
 
   public static Hook hook_Sim_method_1836;
   public delegate void orig_Sim_method_1836(Sim sim); //code that runs every cycle but before parts are processed
   private static void OnSimMethod_1836_WellAfterCycle(orig_Sim_method_1836 orig, Sim sim) {
     orig(sim);
-    SpawnerGlyph.logicFn(sim,LogicWhen.WELL_AFTER_CYCLE);
+    SpawnerGlyph.logicFn(sim, LogicWhen.WELL_AFTER_CYCLE);
   }
+
+  public Hook hook_sim_method_1825;
+  private static bool OnSimMethod1825(On.Sim.orig_method_1825 orig, Sim s) {
+    foreach (var part in s.PartList().Where(p => SpawnerGlyph.partTypes.Contains(p.Type()))) {
+      var pss = PSS(s.SEB(),part);
+      var state = pss.GetDefaultDynState();
+      if(state.isOutput && pss.CurrentOutputs() < part.GetRequiredOutputs()) {
+        return false;
+      }
+    }
+    return orig(s);
+  }
+
+
+
 
 
   public static void DebugLog(string s) => Logger.Log($"[extrawners-debug] {s}");

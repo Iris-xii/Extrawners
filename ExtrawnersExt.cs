@@ -68,7 +68,17 @@ public static class ExtrawnersExt {
   public static int Cycle(this Sim sim) => sim.method_1818();
 
 
+  public static void SetRequiredOutputs(this Part part, int required) => part_method_1170(part, required);
+  public static int GetRequiredOutputs(this Part part) => part.method_1169();
+  public static void AddToCurrentOutputs(this PartSimState pss, int add, int limit) {
+    if ((pss.field_2730 + 1) <= limit) { pss.field_2730 += add; }
+  }
+  public static void SetCurrentOutputs(this PartSimState pss, int current) => pss.field_2730 = current;
+  public static int CurrentOutputs(this PartSimState pss) => pss.field_2730;
+
   internal static Solution m1817(this Sim sim) => sim.field_3818.method_502();
+  internal static Action<Part, int> part_method_1170 =
+    typeof(Part).GetMethod("method_1170", BF.NonPublic | BF.Instance).CreateDelegate<Action<Part, int>>();
   internal static Func<Sim, Molecule, HashSet<HexIndex>, bool> m1837 =
     typeof(Sim).GetMethod("method_1837", BF.NonPublic | BF.Instance).CreateDelegate<Func<Sim, Molecule, HashSet<HexIndex>, bool>>();
   internal static Func<Sim.class_403, HexIndex, bool> c_method_1860 =
@@ -78,7 +88,7 @@ public static class ExtrawnersExt {
       typeof(Sim).GetMethod("method_1844", BF.NonPublic | BF.Static).CreateDelegate<Func<Molecule, Molecule, bool>>();
   public static bool MoleculeHeld(this Sim sim, Molecule molec) {
     return sim.HeldGrippers.Any((gripper) => {
-      var pss = PSS(sim.SEB(),gripper);
+      var pss = PSS(sim.SEB(), gripper);
       var maybeHolding = pss.field_2729;
       return maybeHolding.method_1085() && (maybeHolding.method_1087() == molec);
     });
@@ -119,12 +129,13 @@ public static class ExtrawnersExt {
   /// <summary> A handful of things utilize a few 'dynamic' states by default if nothing else
   /// is specified. <br></br><br></br>
   /// Call this on every Extrawners part that utilizes these to reset them. </summary>
-  public static void AutoStatesReset(Sim sim, Part part) {
+  public static void AutoStatesReset(Sim sim, Part part,bool isOutput) {
     var pss = PSS(sim.SEB(), part);
     if (sim.Cycle() == 0) {
       pss.SetDynState("defaultState", new ExtrawnersDynState() {
         simStarted = true,
         animatingMolecule = null,
+        isOutput = isOutput,
       });
     }
     else {
@@ -135,6 +146,12 @@ public static class ExtrawnersExt {
   public record class ExtrawnersDynState {
     public bool simStarted = false;
     public Molecule? animatingMolecule = null;
+    public bool isOutput = false;
+  }
+
+  public static void Play(this Sound sound, SolutionEditorBase seb) {
+    sound.field_4062 = false;
+    sound.method_28(seb.method_506());
   }
 
   // class_187: Hex -> Vector tools?

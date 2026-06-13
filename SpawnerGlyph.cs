@@ -145,10 +145,25 @@ public static class SpawnerGlyph {
   public static void DrawMolAsIfOutput(Molecule rawM,
       SolutionEditorBase seb,
       PartSimState pss,
+      class_195 renderer,
       Vector2 rendererPos,
-      Part part) {
+      Part part,
+      Molecule? maybeAnimateMolecule = null) {
+    var state = pss.GetDefaultDynState();
+    Molecule? animateMolecule = maybeAnimateMolecule ?? state.animatingMolecule;
     DrawMol(rawM, pss, rendererPos, part, shadowStrength: 0f, alpha: 0.4f);
-
+    if (animateMolecule is not null) {
+      var alpha = seb.AnimTime() < 0.5f ? 1f : class_162.method_416(seb.AnimTime(), 0.5f, 1f, 1f, 0f);
+      DrawMol(rawM, pss, rendererPos, part, fractionOnBoard: class_162.method_416(seb.AnimTime(), 0f, 1f, 1f, 0f), alpha: alpha);
+      //DrawMol(rawM, pss, rendererPos, part, fractionOnBoard: class_162.method_416(seb.AnimTime(), 0f, 1f, 1f, 0f), alpha: 1f);
+      //DrawMol(rawM, pss, rendererPos, part, alpha: 0.05f, fractionOnBoard: 1f, light:true );
+    }
+    if (seb is SolutionEditorScreen ses && state.simStarted) {
+      string currentCount = $"{pss.CurrentOutputs()}/{part.GetRequiredOutputs()}";
+      Vector2 off = renderer.field_1797;
+      class_135.method_272(class_238.field_1989.field_101.field_783, off);
+      class_135.method_290(currentCount, off + new Vector2(28f, 7f), class_238.field_1990.field_2143, class_181.field_1718, (enum_0)1, 1f, 0.6f, float.MaxValue, float.MaxValue, 0, default(Color), null, int.MaxValue, param_3473: false, param_3474: true);
+    }
   }
   public static void DrawMol(Molecule rawM,
       PartSimState pss,
@@ -157,14 +172,15 @@ public static class SpawnerGlyph {
       float rotation = 0f,
       float alpha = 1f,
       float fractionOnBoard = 1f,
-      float shadowStrength = 1f) {
+      float shadowStrength = 1f,
+      bool light = false) {
     Editor.method_925(rawM.method_1115(PartRotation(pss)),
       rendererPos,
-      -part.method_1161(),
+      -part.method_1161(), //hexindex
       rotation /*rotation*/,
       alpha /*alpha*/,
       fractionOnBoard /* 0 = gone*/,
-      shadowStrength /*shadow str*/, false /*light*/, null);
+      shadowStrength /*shadow str*/, light /*light*/, null);
   }
 
   public static void QueueMolAnimation(Sim sim,
@@ -189,7 +205,7 @@ public static class SpawnerGlyph {
     bool doAutoStatesReset = true) {
     var shifted = rawM.ShiftedBy(part);
     if (when == PRE_CYCLE) {
-      if (doAutoStatesReset) { AutoStatesReset(sim, part); }
+      if (doAutoStatesReset) { AutoStatesReset(sim, part, isOutput: false); }
       if (DoesNotOverlap(sim, part, shifted)) {
         if (sim.Cycle() == 0) {
           sim.AddMolecule(shifted);
@@ -212,18 +228,20 @@ public static class SpawnerGlyph {
     PartSimState pss,
     Part part,
     LogicWhen when,
-    bool doAutoStatesReset = true) {
+    bool doAutoStatesReset = true,
+    Func<Molecule, Molecule, bool>? molecMatchesFn = null,
+    int outputsAmount = 6) {
+    var seb = sim.SEB();
     if (when == PRE_CYCLE) {
-      if (doAutoStatesReset) { AutoStatesReset(sim, part); }
+      if (doAutoStatesReset) { AutoStatesReset(sim, part, isOutput: true); }
+      part.SetRequiredOutputs(outputsAmount);
     }
     else if (when.FireGlyph()) {
-      if (ShouldAcceptMol(sim, rawM, pss, part, out var accepted)) {
-        sim.RemoveMolecule(accepted);
-      }
-    }
-    else if (when == WELL_AFTER_CYCLE) {
-      if (ShouldAcceptMol(sim, rawM, pss, part, out _)) {
+      if (ShouldAcceptMol(sim, rawM, pss, part, out var accepted, molecMatchesFn)) {
         QueueMolAnimation(sim, rawM, pss, part);
+        sim.RemoveMolecule(accepted);
+        class_238.field_1991.field_1868.Play(seb);
+        pss.AddToCurrentOutputs(1, outputsAmount);
       }
     }
   }
@@ -231,11 +249,13 @@ public static class SpawnerGlyph {
       Molecule rawTemplateM,
       PartSimState pss,
       Part part,
-      out Molecule accepted) {
+      out Molecule accepted,
+      Func<Molecule, Molecule, bool>? molecMatchesFn = null) {
+    molecMatchesFn ??= molecMatchesExact;
     var seb = sim.SEB();
     var templateShifted = rawTemplateM.ShiftedBy(part);
     foreach (var m in sim.field_3823) {
-      if (molecMatchesExact(m, templateShifted) && !sim.MoleculeHeld(m)) {
+      if (molecMatchesFn(m, templateShifted) && !sim.MoleculeHeld(m)) {
         accepted = m;
         return true;
       }
