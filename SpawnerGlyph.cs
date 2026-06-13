@@ -34,8 +34,10 @@ public static class SpawnerGlyph {
   public static Texture genericBase = Brimstone.API.GetTexture();
 
   public static PartType[] partTypes = new PartType[0];
-  public static GlyphData.RenderFn glyphRenderer = (_, _, _, _, _) => { };
-  public static GlyphData.LogicFn glyphLogic = (_, _) => { };
+  internal static GlyphData.RenderFn glyphRenderer = (_, _, _, _, _) => { };
+  internal static GlyphData.PreCycleFn glyphPreCycle = (_) => { };
+  internal static GlyphData.AfterCycle glyphAfterCycle = (_, _) => { };
+  internal static GlyphData.WellAfterCycleFn glyphWellAfterCycle = (_) => { };
 
   internal static PartType SpawnerPartTypeNew(int number) => new() {
     field_1528 = PART_ID + $"-{number}", // ID
@@ -126,14 +128,21 @@ public static class SpawnerGlyph {
 
   }
   public static void DrawMolAsIfInput(Molecule m,
+    SolutionEditorBase seb,
     PartSimState pss,
     Vector2 rendererPos,
     Part part,
-    bool? maybeSimStarted = null) {
-    bool simStarted = maybeSimStarted ?? pss.GetDefaultDynState().simStarted;
+    bool? maybeSimStarted = null,
+    Molecule? maybeAnimateMolecule = null) {
+    var state = pss.GetDefaultDynState();
+    Molecule? animateMolecule = maybeAnimateMolecule ?? state.animatingMolecule;
+    bool simStarted = maybeSimStarted ?? state.simStarted;
     if (!simStarted) { DrawMol(m, pss, rendererPos, part); }
+    if (animateMolecule is not null) {
+      DrawMol(m, pss, rendererPos, part, fractionOnBoard: seb.AnimTime());
+    }
   }
-  public static void DrawMol(Molecule m,
+  public static void DrawMol(Molecule rawM,
       PartSimState pss,
       Vector2 rendererPos,
       Part part,
@@ -141,7 +150,7 @@ public static class SpawnerGlyph {
       float alpha = 1f,
       float fractionOnBoard = 1f,
       float shadowStrength = 1f) {
-    Editor.method_925(m.method_1115(PartRotation(pss)),
+    Editor.method_925(rawM.method_1115(PartRotation(pss)),
       rendererPos,
       -part.method_1161(),
       rotation /*rotation*/,
@@ -150,19 +159,50 @@ public static class SpawnerGlyph {
       shadowStrength /*shadow str*/, false /*light*/, null);
   }
 
-  public static void SpawnMolWithAnimation(Sim sim, // TODO!!!
-      bool firstHalf,
-      Molecule m,
+  public static void SpawnAnimation(Sim sim,
+      Molecule rawM,
       PartSimState pss,
       Part part) {
+    var state = pss.GetDefaultDynState();
+    state.animatingMolecule = rawM;
   }
-  public static void SpawnMolAsIfInput(Sim sim,
-      bool firstHalf,
-      Molecule m,
+  public static void SpawnMol(Sim sim,
+    Molecule rawM,
+    PartSimState pss,
+    Part part) {
+    var shifted = rawM.ShiftedBy(part);
+    sim.AddMolecule(shifted);
+  }
+  public static void AfterCycleAsIfInput(Sim sim,
+    Molecule rawM,
+    PartSimState pss,
+    Part part,
+    bool firstHalf) {
+    var shifted = rawM.ShiftedBy(part);
+    if (DoesNotOverlap(sim, part, shifted)) {
+      sim.AddMolecule(shifted);
+      //SpawnAnimation(sim,rawM,pss,part);
+    }
+  }
+  public static void WellAfterCycleAsIfInput(Sim sim,
+      Molecule rawM,
       PartSimState pss,
       Part part) {
-    if (sim.Cycle() % 6 == 2 && firstHalf) {
-      sim.AddMolecule(m.ShiftedBy(part.method_1161(), part.method_1163()));
+    var shifted = rawM.ShiftedBy(part);
+    if (DoesNotOverlap(sim, part, shifted)) {
+      SpawnAnimation(sim,rawM,pss,part);
+      //sim.AddMolecule(shifted);
+    }
+  }
+  public static void InitAndSpawnAsIfInput(Sim sim,
+      Molecule rawM,
+      PartSimState pss,
+      Part part) {
+    var shifted = rawM.ShiftedBy(part);
+    if (DoesNotOverlap(sim, part, shifted)) {
+      if (sim.Cycle() == 0) {
+        sim.AddMolecule(shifted);
+      }
     }
   }
 
@@ -209,7 +249,7 @@ public static class SpawnerGlyph {
       QApi.AddPartTypeToPanel(pType, false);
     }
     QApi.RunAfterCycle((sim, firstHalf) => {
-      SpawnerGlyph.glyphLogic(sim, firstHalf);
+      glyphAfterCycle(sim, firstHalf);
     });
     partTypes = partTypesList.ToArray();
   }

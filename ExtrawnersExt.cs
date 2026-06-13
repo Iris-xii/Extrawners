@@ -57,13 +57,33 @@ public static class ExtrawnersExt {
   public static HexRotation PartRotation(SolutionEditorBase seb, Part part) => seb.method_507().method_481(part).field_2726;
   public static Solution Solution(this SolutionEditorBase seb) => seb.method_502();
   public static PartType Type(this Part part) => part.method_1159();
+  public static float AnimTime(this SolutionEditorBase seb) => seb.method_504();
 
   public static SolutionEditorBase SEB(this Sim sim) => sim.field_3818;
-  public static void AddMolecule(this Sim sim,Molecule m) => sim.field_3823.Add(m);
-  public static Molecule ShiftedBy(this Molecule m,HexIndex shift,HexRotation rot) => m.method_1115(rot).method_1117(shift);
+  public static void AddMolecule(this Sim sim, Molecule m) => sim.field_3823.Add(m);
+  public static Molecule ShiftedBy(this Molecule m, Part part) => m.ShiftedBy(part.method_1161(), part.method_1163());
+  public static Molecule ShiftedBy(this Molecule m, HexIndex shift, HexRotation rot) => m.method_1115(rot).method_1117(shift);
   public static List<Part> PartList(this Solution solution) => solution.field_3919;
   public static List<Part> PartList(this Sim sim) => sim.field_3818.method_502().field_3919;
   public static int Cycle(this Sim sim) => sim.method_1818();
+
+
+  internal static Solution m1817(this Sim sim) => sim.field_3818.method_502();
+  internal static Func<Sim, Molecule, HashSet<HexIndex>, bool> m1837 =
+      typeof(Sim).GetMethod("method_1837", BF.NonPublic | BF.Instance).CreateDelegate<Func<Sim, Molecule, HashSet<HexIndex>, bool>>();
+  public static bool DoesNotOverlap(Sim sim, Part item2, Molecule m) {
+    HashSet<HexIndex> hashSet = new();
+    foreach (Molecule item in sim.field_3823) {
+      hashSet.UnionWith(item.method_1100().Keys);
+    }
+    //HexIndex param_ = item2.method_1161();
+    //HexRotation param_2 = item2.method_1163();
+    //Molecule molecule = item2.method_1185(sim.m1817()).method_1115(param_2).method_1117(param_);
+    if (!m1837(sim, m, hashSet)) {
+      return true;
+    }
+    return false;
+  }
 
   public static T GetDynState<T>(this PartSimState pss, string entry) where T : new() {
     DynamicData dyn_pss = new(pss);
@@ -87,16 +107,21 @@ public static class ExtrawnersExt {
   /// <summary> A handful of things utilize a few 'dynamic' states by default if nothing else
   /// is specified. <br></br><br></br>
   /// Call this on every Extrawners part that utilizes these to reset them. </summary>
-  public static void AutoStatesReset(Sim sim, bool firstHalf, Part part) {
-    if (sim.Cycle() == 0 && firstHalf) {
-      PSS(sim.SEB(),part).SetDynState("defaultState", new ExtrawnersDynState() {
+  public static void AutoStatesReset(Sim sim, Part part) {
+    var pss = PSS(sim.SEB(), part);
+    if (sim.Cycle() == 0) {
+      pss.SetDynState("defaultState", new ExtrawnersDynState() {
         simStarted = true,
+        animatingMolecule = null, 
       });
+    } else {
+      var state = pss.GetDefaultDynState();
+      state.animatingMolecule = null;
     }
   }
-
-  public class ExtrawnersDynState {
+  public record class ExtrawnersDynState {
     public bool simStarted = false;
+    public Molecule? animatingMolecule = null; 
   }
 
   // class_187: Hex -> Vector tools?

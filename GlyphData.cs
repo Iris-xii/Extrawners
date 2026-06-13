@@ -30,8 +30,12 @@ public sealed record class GlyphData {
       SolutionEditorBase seb,
       class_195 renderer);
   public RenderFn partRenderer = (_,_,_,_,_) => {};
-  public delegate void LogicFn(Sim sim,bool firstHalf);
-  public LogicFn glyphLogic = (_,_) => {};
+  public delegate void PreCycleFn(Sim sim);
+  public PreCycleFn glyphPreCycle = (_) => {};
+  public delegate void AfterCycle(Sim sim,bool firstHalf);
+  public AfterCycle glyphAfterCycle = (_,_) => {};
+  public delegate void WellAfterCycleFn(Sim sim);
+  public WellAfterCycleFn glyphWellAfterCycle = (_) => {};
 
   /*
   private Molecule LastMol() {

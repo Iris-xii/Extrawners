@@ -64,18 +64,35 @@ public sealed partial class ExtrawnersMod {
           }
           else if (glyphIndex == 2) {
             SpawnerGlyph.DrawFullBaseFromMol(part, pos, seb, renderer, m2);
-            SpawnerGlyph.DrawMolAsIfInput(m2, PSS(seb, part), pos, part);
+            SpawnerGlyph.DrawMolAsIfInput(m2, seb, PSS(seb, part), pos, part);
           }
         },
-        glyphLogic = (sim, firstHalf) => {
+        glyphPreCycle = (sim) => {
+          foreach (var part in sim.PartList()) {
+            AutoStatesReset(sim, part);
+            var pss = PSS(sim.SEB(), part);
+            if (part.Type() == SpawnerGlyph.partTypes[2]) {
+              SpawnerGlyph.InitAndSpawnAsIfInput(sim, m2, pss, part);
+            }
+          }
+        },
+        glyphAfterCycle = (sim, half) => {
           foreach (var part in sim.PartList()) {
             var pss = PSS(sim.SEB(), part);
-            AutoStatesReset(sim,firstHalf,part);
             if (part.Type() == SpawnerGlyph.partTypes[2]) {
-              SpawnerGlyph.SpawnMolAsIfInput(sim,firstHalf,m2,pss,part);
+              SpawnerGlyph.AfterCycleAsIfInput(sim, m2, pss, part, half);
+            }
+          }
+        },
+        glyphWellAfterCycle = (sim) => {
+          foreach (var part in sim.PartList()) {
+            var pss = PSS(sim.SEB(), part);
+            if (part.Type() == SpawnerGlyph.partTypes[2]) {
+              SpawnerGlyph.WellAfterCycleAsIfInput(sim, m2, pss, part);
             }
           }
         }
+
       });
     }
   }

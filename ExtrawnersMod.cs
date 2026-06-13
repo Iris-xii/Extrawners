@@ -62,6 +62,8 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
       typeof(Solution).GetMethod("ApplyChanges", BF.Public | BF.Static),
       HookApplyChanges
     );
+		hook_Sim_method_1828 = new Hook(typeof(Sim).GetMethod("method_1828",BF.NonPublic |BF.Instance), OnSimMethod1828_SpawnScaffolds);
+    hook_Sim_method_1839 = new Hook(typeof(Sim).GetMethod("method_1839",BF.NonPublic |BF.Instance), OnSimMethod_1839_WellAfterCycle);
 
     DoExamplePuzzles();
   }
@@ -90,7 +92,9 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
       }
       SpawnerGlyph.Cleanup();
       SpawnerGlyph.glyphRenderer = glyphData.partRenderer;
-      SpawnerGlyph.glyphLogic = glyphData.glyphLogic;
+      SpawnerGlyph.glyphPreCycle = glyphData.glyphPreCycle;
+      SpawnerGlyph.glyphAfterCycle = glyphData.glyphAfterCycle;
+      SpawnerGlyph.glyphWellAfterCycle = glyphData.glyphWellAfterCycle;
       for (int i = 0; i < glyphData.origins.Count; i++) {
         var origin = glyphData.origins[i];
         glyphData.partTypeModify(SpawnerGlyph.partTypes);
@@ -119,7 +123,9 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
       }
       SpawnerGlyph.Cleanup();
       SpawnerGlyph.glyphRenderer = glyphData.partRenderer;
-      SpawnerGlyph.glyphLogic = glyphData.glyphLogic;
+      SpawnerGlyph.glyphPreCycle = glyphData.glyphPreCycle;
+      SpawnerGlyph.glyphAfterCycle = glyphData.glyphAfterCycle;
+      SpawnerGlyph.glyphWellAfterCycle = glyphData.glyphWellAfterCycle;
       glyphData.partTypeModify(SpawnerGlyph.partTypes);
     }
     //Puzzle puzzle = solution.method_1934();
@@ -140,6 +146,21 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     }
     orig(self, param_4617);
   }
+
+	public static Hook hook_Sim_method_1828;
+  public delegate void orig_Sim_method_1828(Sim sim); //code that runs every cycle but before parts are processed
+  private static void OnSimMethod1828_SpawnScaffolds(orig_Sim_method_1828 orig, Sim sim) {
+    orig(sim);
+    SpawnerGlyph.glyphPreCycle(sim);
+  }
+
+  public static Hook hook_Sim_method_1839;
+  public delegate void orig_Sim_method_1839(Sim sim); //code that runs every cycle but before parts are processed
+  private static void OnSimMethod_1839_WellAfterCycle(orig_Sim_method_1839 orig, Sim sim) {
+    orig(sim);
+    SpawnerGlyph.glyphWellAfterCycle(sim);
+  }
+
 
   public static void DebugLog(string s) => Logger.Log($"[extrawners-debug] {s}");
   public static void Log(string s) => Logger.Log($"[extrawners] {s}");
