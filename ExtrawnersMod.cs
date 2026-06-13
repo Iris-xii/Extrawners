@@ -63,7 +63,7 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
       HookApplyChanges
     );
 		hook_Sim_method_1828 = new Hook(typeof(Sim).GetMethod("method_1828",BF.NonPublic |BF.Instance), OnSimMethod1828_SpawnScaffolds);
-    hook_Sim_method_1839 = new Hook(typeof(Sim).GetMethod("method_1839",BF.NonPublic |BF.Instance), OnSimMethod_1839_WellAfterCycle);
+    hook_Sim_method_1836 = new Hook(typeof(Sim).GetMethod("method_1836",BF.NonPublic |BF.Instance), OnSimMethod_1836_WellAfterCycle);
 
     DoExamplePuzzles();
   }
@@ -154,9 +154,9 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     SpawnerGlyph.glyphPreCycle(sim);
   }
 
-  public static Hook hook_Sim_method_1839;
-  public delegate void orig_Sim_method_1839(Sim sim); //code that runs every cycle but before parts are processed
-  private static void OnSimMethod_1839_WellAfterCycle(orig_Sim_method_1839 orig, Sim sim) {
+  public static Hook hook_Sim_method_1836;
+  public delegate void orig_Sim_method_1836(Sim sim); //code that runs every cycle but before parts are processed
+  private static void OnSimMethod_1836_WellAfterCycle(orig_Sim_method_1836 orig, Sim sim) {
     orig(sim);
     SpawnerGlyph.glyphWellAfterCycle(sim);
   }
