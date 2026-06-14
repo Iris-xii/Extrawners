@@ -17,6 +17,8 @@ using VanillaAtoms = Brimstone.API.VanillaAtoms;
 using BF = System.Reflection.BindingFlags;
 using static ExtrawnersExt;
 
+
+#pragma warning disable CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
 //dotnet build;rm Extrawners.dll;cp bin/Debug/net4.5.2/Extrawners.dll ./
 public sealed partial class ExtrawnersMod : QuintessentialMod {
   public static Dictionary<string, GlyphData> puzzleGlyphData = new();
@@ -91,14 +93,19 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     orig(puzzle, solution);
 
     var puzzleId = puzzle.field_2766;
-    foreach (var glyphData in puzzleGlyphData.Where(a => a.Key == puzzleId).Select(a => a.Value)) {
+    GlyphData? maybeGlyphData = puzzleGlyphData
+      .Where(a => a.Key == puzzleId)
+      .Select(a => a.Value)
+      .FirstOrDefault();
+    maybeGlyphData ??= Presets.LoadPresets(puzzle,solution);
+    if (maybeGlyphData is GlyphData glyphData) {
       if (glyphData.origins.Count > SpawnerGlyph.MAX_SPAWNERS) {
         throw new ArgumentOutOfRangeException($"Only {SpawnerGlyph.MAX_SPAWNERS} max spawner glyphs are allowed at a time. Bug me (Iris) to increase this if you need more.");
       }
       GlyphDataSetupShared(glyphData);
       for (int i = 0; i < glyphData.origins.Count; i++) {
         var origin = glyphData.origins[i];
-        glyphData.partTypeModify(SpawnerGlyph.partTypes);
+        glyphData.partTypeModify(SpawnerGlyph.partTypes, solution);
 
         HexIndex position = origin;
         HexRotation rotation = new();
@@ -124,12 +131,17 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     Puzzle puzzle = solution.method_1934();
     var puzzleId = puzzle.field_2766;
 
-    foreach (var glyphData in puzzleGlyphData.Where(a => a.Key == puzzleId).Select(a => a.Value)) {
+    GlyphData? maybeGlyphData = puzzleGlyphData
+      .Where(a => a.Key == puzzleId)
+      .Select(a => a.Value)
+      .FirstOrDefault();
+    maybeGlyphData ??= Presets.LoadPresets(puzzle,solution);
+    if (maybeGlyphData is GlyphData glyphData) {
       if (glyphData.origins.Count > SpawnerGlyph.MAX_SPAWNERS) {
         throw new ArgumentOutOfRangeException($"Only {SpawnerGlyph.MAX_SPAWNERS} max spawner glyphs are allowed at a time. Bug me (Iris) to increase this if you need more.");
       }
       GlyphDataSetupShared(glyphData);
-      glyphData.partTypeModify(SpawnerGlyph.partTypes);
+      glyphData.partTypeModify(SpawnerGlyph.partTypes, solution);
     }
     //Puzzle puzzle = solution.method_1934();
     //var perms = puzzle.CustomPermissions ?? new();
@@ -167,9 +179,9 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
   public Hook hook_sim_method_1825;
   private static bool OnSimMethod1825(On.Sim.orig_method_1825 orig, Sim s) {
     foreach (var part in s.PartList().Where(p => SpawnerGlyph.partTypes.Contains(p.Type()))) {
-      var pss = PSS(s.SEB(),part);
+      var pss = PSS(s.SEB(), part);
       var state = pss.GetDefaultDynState();
-      if(state.isOutput && pss.CurrentOutputs() < part.GetRequiredOutputs()) {
+      if (state.isOutput && pss.CurrentOutputs() < part.GetRequiredOutputs()) {
         return false;
       }
     }

@@ -35,8 +35,8 @@ public sealed record class GlyphData {
   /// it won't spawn)
   /// </summary>
   public List<HexIndex> origins = new(); 
-  public delegate void PartTypeModify(PartType[] partTypes);
-  public PartTypeModify partTypeModify = (_t) => {};
+  public delegate void PartTypeModify(PartType[] partTypes,Solution s);
+  public PartTypeModify partTypeModify = (_t,_) => {};
   public delegate void RenderFn(int glyphIndex,
       Part part,
       Vector2 pos,

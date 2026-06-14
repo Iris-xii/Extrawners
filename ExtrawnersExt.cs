@@ -57,6 +57,7 @@ public static class ExtrawnersExt {
   public static Solution Solution(this SolutionEditorBase seb) => seb.method_502();
   public static PartType Type(this Part part) => part.method_1159();
   public static float AnimTime(this SolutionEditorBase seb) => seb.method_504();
+  public static float AccumulatedTime(this SolutionEditorBase seb) => seb.method_509();
 
   public static SolutionEditorBase SEB(this Sim sim) => sim.field_3818;
   public static void AddMolecule(this Sim sim, Molecule m) => sim.field_3823.Add(m);
@@ -66,6 +67,15 @@ public static class ExtrawnersExt {
   public static List<Part> PartList(this Solution solution) => solution.field_3919;
   public static List<Part> PartList(this Sim sim) => sim.field_3818.method_502().field_3919;
   public static int Cycle(this Sim sim) => sim.method_1818();
+
+  public static void SetHexesToMol(this PartType t,Molecule m) => 
+    t.field_1540 = m.method_1100().Select(a => a.Key).ToArray();
+  public static void SetHexesToAllMols(this PartType t,IEnumerable<Molecule> mls) => 
+    t.field_1540 = mls.SelectMany(m => m.method_1100().Keys).Distinct().ToArray();
+  public static void SetName(this PartType t,string name) =>
+    t.field_1529 = class_134.method_253(name, string.Empty);
+  public static void SetDescription(this PartType t,string desc) =>
+    t.field_1530 = class_134.method_253(desc, string.Empty);
 
 
   public static void SetRequiredOutputs(this Part part, int required) => part_method_1170(part, required);

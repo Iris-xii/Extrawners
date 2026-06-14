@@ -22,18 +22,7 @@ using static LogicWhen;
 #nullable enable
 public static class SpawnerGlyph {
 
-  public static readonly Texture base_empty_fuzz = class_235.method_615("textures/glyph_base_parts/base_empty_fuzz");
-  public static readonly Texture base_bl = class_235.method_615("textures/glyph_base_parts/base_bl");
-  public static readonly Texture base_br = class_235.method_615("textures/glyph_base_parts/base_br");
-  public static readonly Texture base_l = class_235.method_615("textures/glyph_base_parts/base_l");
-  public static readonly Texture base_r = class_235.method_615("textures/glyph_base_parts/base_r");
-  public static readonly Texture base_tl = class_235.method_615("textures/glyph_base_parts/base_tl");
-  public static readonly Texture base_tr = class_235.method_615("textures/glyph_base_parts/base_tr");
-  public static readonly Texture pipe_ring = class_235.method_615("textures/parts/pipe_ring");
-  public static readonly Texture pipe_base = class_235.method_615("textures/parts/pipe_base");
-  public static readonly Texture pipe_bond = class_235.method_615("textures/parts/pipe_bond");
   public const string PART_ID = "extrawners-glyph";
-  internal static Texture genericBase = Brimstone.API.GetTexture();
 
   public static PartType[] partTypes = new PartType[0];
   internal static GlyphData.RenderFn glyphRenderer = (_, _, _, _, _) => { };
@@ -47,8 +36,9 @@ public static class SpawnerGlyph {
     field_1539 = true, // Is a glyph 
     field_1549 = null, // Shadow/glow
     field_1550 = null, // Stroke/outline
-    field_1547 = genericBase, // Panel icon
-    field_1548 = genericBase, // Hovered panel icon
+    field_1547 = Resources.genericBase[number], // Panel icon
+    field_1548 = Resources.genericBase[number], // Hovered panel icon
+    field_1552 = true, // only one?
     field_1540 = new HexIndex[]{
                 new(0, 0),
             }, // Spaces used
@@ -66,8 +56,9 @@ public static class SpawnerGlyph {
     pt.field_1539 = true; // Is a glyph 
     pt.field_1549 = null; // Shadow/glow
     pt.field_1550 = null; // Stroke/outline
-    pt.field_1547 = genericBase; // Panel icon
-    pt.field_1548 = genericBase; // Hovered panel icon
+    pt.field_1547 = Resources.genericBase[number]; // Panel icon
+    pt.field_1548 = Resources.genericBase[number]; // Hovered panel icon
+    pt.field_1552 = true; // only one?
     pt.field_1540 = new HexIndex[]{
                 new(0, 0),
             }; // Spaces used
@@ -83,25 +74,36 @@ public static class SpawnerGlyph {
   }
 
 
-  public static void DrawFullBaseFromMol(Part part,
-      Vector2 pos,
-      SolutionEditorBase editor,
+  public static void DrawFullBaseFromMol(
       class_195 renderer,
       Molecule mol) {
     var hexes = mol.method_1100().Select(a => a.Key);
     foreach (var hex in hexes) {
-      DrawBase(part, pos, editor, renderer, hex);
+      DrawBase(renderer, hex);
     }
     foreach (var c277 in mol.method_1101()) {
       var from = c277.field_2187;
       var to = c277.field_2188;
-      DrawBaseBond(part, pos, editor, renderer, from: from, to: to);
+      DrawBaseBond(renderer, from: from, to: to);
+    }
+  }
+  public static void DrawFullBaseFromHexesAndBonds<H,B>(
+    class_195 renderer,
+    H hexes,
+    B bonds
+    ) where H: IEnumerable<HexIndex> where B: IEnumerable<Pair<HexIndex,HexIndex>> { 
+    foreach (var hex in hexes) {
+      DrawBase(renderer, hex);
+    }
+    foreach (var c277 in bonds) {
+      var from = c277.Left;
+      var to = c277.Right;
+      DrawBaseBond(renderer, from: from, to: to);
     }
   }
 
-  public static void DrawBaseBond(Part part,
-      Vector2 pos,
-      SolutionEditorBase seb,
+
+  public static void DrawBaseBond(
       class_195 renderer,
       HexIndex from,
       HexIndex to,
@@ -109,22 +111,18 @@ public static class SpawnerGlyph {
       float offset_y = 24f) {
     float angle = class_187.field_1742.method_492(to - from).Angle();
     var OFFSET = new Vector2(offset_x, offset_y); //new Vector2(-23f, 20f);
-    renderer.method_526(pipe_bond,
+    renderer.method_526(Resources.pipe_bond,
       from,
       Vector2.Zero,
       OFFSET,
       angle);
   }
-  public static void DrawBase(Part part,
-      Vector2 pos,
-      SolutionEditorBase seb,
+  public static void DrawBase(
       class_195 renderer,
       HexIndex hexPos) {
     //renderer.method_530(base_empty_fuzz, hexPos, 0f);
-    renderer.method_530(pipe_base, hexPos, 0f);
-    renderer.method_528(pipe_ring, hexPos, Vector2.Zero);
-    var rotation = PartRotation(seb, part);
-    var rotationF = rotation.ToRadians();
+    renderer.method_530(Resources.pipe_base, hexPos, 0f);
+    renderer.method_528(Resources.pipe_ring, hexPos, Vector2.Zero);
 
   }
   public static void DrawMolAsIfInput(Molecule rawM,
@@ -282,7 +280,7 @@ public static class SpawnerGlyph {
     //  Editor.method_925(m.method_1115(pss.field_2726), pos, -part.method_1161(), 0f /*rotation*/, 1f /*alpha*/, 1f /* 0 = gone*/, 1f /*shadow str*/, false /*light*/, null);
     //}
   }
-  public const int MAX_SPAWNERS = 8;
+  public const int MAX_SPAWNERS = 16;
   internal static void LoadPuzzleContent() {
     List<PartType> partTypesList = new();
     for (int i = 0; i < MAX_SPAWNERS; i++) {
