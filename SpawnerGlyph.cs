@@ -129,15 +129,13 @@ public static class SpawnerGlyph {
     SolutionEditorBase seb,
     PartSimState pss,
     Vector2 rendererPos,
-    Part part,
-    bool? maybeSimStarted = null,
+    Part part, 
     Molecule? maybeAnimateMolecule = null) {
     var state = pss.GetDefaultDynState();
-    Molecule? animateMolecule = maybeAnimateMolecule ?? state.animatingMolecule;
-    bool simStarted = maybeSimStarted ?? state.simStarted;
-    if (!simStarted) { DrawMol(rawM, pss, rendererPos, part); }
+    Molecule? animateMolecule = maybeAnimateMolecule ?? state.animatingMolecule; 
+    if (seb.method_503() == enum_128.Stopped) { DrawMol(rawM, pss, rendererPos, part); }
     if (animateMolecule is not null) {
-      DrawMol(rawM, pss, rendererPos, part, fractionOnBoard: seb.AnimTime());
+      DrawMol(animateMolecule, pss, rendererPos, part, fractionOnBoard: seb.AnimTime());
     }
   }
   public static void DrawMolAsIfOutput(Molecule rawM,

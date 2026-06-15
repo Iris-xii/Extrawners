@@ -61,7 +61,7 @@ public static class Presets {
         if (glyphIndex == nextGlyph) {
           SpawnerGlyph.DrawFullBaseFromHexesAndBonds(renderer, hexes, sortaBonds);
           SpawnerGlyph.DrawMolAsIfInput(moleculesBag[(int)Math.Floor(seb.AccumulatedTime() % molCountF)],
-            seb, pss, pos, part, maybeSimStarted: seb.method_503() != enum_128.Stopped);
+            seb, pss, pos, part );
         }
       };
       gd.logicFn += (Sim sim, LogicWhen when) => {
@@ -69,6 +69,7 @@ public static class Presets {
         foreach (var thisPart in sim.PartList().Where(p => p.Type() == SpawnerGlyph.partTypes[nextGlyph])) {
           var pss = PSS(seb, thisPart); 
           if (when == LogicWhen.PRE_CYCLE && sim.Cycle() == 0) {
+            AutoStatesReset(sim,thisPart,false);
             pss.SetDynState<Random>("rng", new(seb.Solution().Puzzle().PuzzleId().GetHashCode()));
             pss.SetDynState<List<Molecule>>("curBag", randomBag.ToList());
           }
@@ -89,6 +90,8 @@ public static class Presets {
           var outMolecRaw = cur;
           var molecShifted = outMolecRaw.ShiftedBy(thisPart);
           if (when == LogicWhen.PRE_CYCLE) {
+            AutoStatesReset(sim,thisPart,false);
+            pss.GetDefaultDynState().animatingMolecule = null;
             if (DoesNotOverlap(sim, thisPart, molecShifted)) {
               if (sim.Cycle() == 0) {
                 sim.AddMolecule(molecShifted); 
