@@ -61,52 +61,81 @@ public static class Presets {
         if (glyphIndex == nextGlyph) {
           SpawnerGlyph.DrawFullBaseFromHexesAndBonds(renderer, hexes, sortaBonds);
           SpawnerGlyph.DrawMolAsIfInput(moleculesBag[(int)Math.Floor(seb.AccumulatedTime() % molCountF)],
-            seb, pss, pos, part );
+            seb, pss, pos, part);
         }
       };
       gd.logicFn += (Sim sim, LogicWhen when) => {
         var seb = sim.SEB();
         foreach (var thisPart in sim.PartList().Where(p => p.Type() == SpawnerGlyph.partTypes[nextGlyph])) {
-          var pss = PSS(seb, thisPart); 
+          var pss = PSS(seb, thisPart);
           if (when == LogicWhen.PRE_CYCLE && sim.Cycle() == 0) {
-            AutoStatesReset(sim,thisPart,false);
-            pss.SetDynState<Random>("rng", new(seb.Solution().Puzzle().PuzzleId().GetHashCode()));
-            pss.SetDynState<List<Molecule>>("curBag", randomBag.ToList());
-          }
-          var rng = pss.GetDynState<Random>("rng");
-          var bag = pss.GetDynState<List<Molecule>>("curBag");
-          Molecule? cur = pss.GetDynStateOrNull<Molecule?>("cur");
-          if (bag.Count == 0) {
-            bag = randomBag.ToList();
-            pss.SetDynState("curBag", bag);
-          }
-          if (cur is null) {
-            var i = rng.Next(0, bag.Count);
-            cur = bag[i];
-            bag.RemoveAt(i);
-            pss.SetDynState("cur", cur);
-          }
-
-          var outMolecRaw = cur;
-          var molecShifted = outMolecRaw.ShiftedBy(thisPart);
-          if (when == LogicWhen.PRE_CYCLE) {
-            AutoStatesReset(sim,thisPart,false);
-            pss.GetDefaultDynState().animatingMolecule = null;
-            if (DoesNotOverlap(sim, thisPart, molecShifted)) {
-              if (sim.Cycle() == 0) {
-                sim.AddMolecule(molecShifted); 
+            AutoStatesReset(sim, thisPart, false);
+            if (sim.Cycle() == 0) {
+              pss.SetDynState<Random>("rng", new(seb.Solution().Puzzle().PuzzleId().GetHashCode()));
+              pss.SetDynState<List<Molecule>>("curBag", randomBag.ToList());
+              {
+                var rng = pss.GetDynStateOrDef<Random>("rng");
+                var bag = pss.GetDynStateOrDef<List<Molecule>>("curBag");
+                Molecule? cur = pss.GetDynStateOrNull<Molecule?>("cur");
+                if (bag.Count == 0) {
+                  bag = randomBag.ToList();
+                  pss.SetDynState("curBag", bag);
+                }
+                if (cur is null) {
+                  var i = rng.Next(0, bag.Count);
+                  cur = bag[i];
+                  bag.RemoveAt(i);
+                  pss.SetDynState("cur", cur);
+                }
+                var outMolecRaw = cur;
+                var molecShifted = outMolecRaw.ShiftedBy(thisPart);
+                if (DoesNotOverlap(sim, thisPart, molecShifted)) {
+                  sim.AddMolecule(molecShifted);
+                  pss.SetDynState<Molecule?>("cur", null);
+                }
               }
             }
           }
           else if (when.FireGlyph()) {
+            pss.GetDefaultDynState().animatingMolecule = null;
+            var rng = pss.GetDynStateOrDef<Random>("rng");
+            var bag = pss.GetDynStateOrDef<List<Molecule>>("curBag");
+            Molecule? cur = pss.GetDynStateOrNull<Molecule?>("cur");
+            if (bag.Count == 0) {
+              bag = randomBag.ToList();
+              pss.SetDynState("curBag", bag);
+            }
+            if (cur is null) {
+              var i = rng.Next(0, bag.Count);
+              cur = bag[i];
+              bag.RemoveAt(i);
+              pss.SetDynState("cur", cur);
+            }
+            var outMolecRaw = cur;
+            var molecShifted = outMolecRaw.ShiftedBy(thisPart);
             if (DoesNotOverlap(sim, thisPart, molecShifted)) {
-              sim.AddMolecule(molecShifted); 
+              sim.AddMolecule(molecShifted);
+              pss.SetDynState<Molecule?>("cur", null);
             }
           }
           else if (when == LogicWhen.WELL_AFTER_CYCLE) {
+            var rng = pss.GetDynStateOrDef<Random>("rng");
+            var bag = pss.GetDynStateOrDef<List<Molecule>>("curBag");
+            Molecule? cur = pss.GetDynStateOrNull<Molecule?>("cur");
+            if (bag.Count == 0) {
+              bag = randomBag.ToList();
+              pss.SetDynState("curBag", bag);
+            }
+            if (cur is null) {
+              var i = rng.Next(0, bag.Count);
+              cur = bag[i];
+              bag.RemoveAt(i);
+              pss.SetDynState("cur", cur);
+            }
+            var outMolecRaw = cur;
+            var molecShifted = outMolecRaw.ShiftedBy(thisPart);
             if (DoesNotOverlap(sim, thisPart, molecShifted)) {
               SpawnerGlyph.QueueMolAnimation(sim, outMolecRaw, pss, thisPart);
-              pss.SetDynState<Molecule?>("cur", null);
             }
           }
         }

@@ -119,7 +119,7 @@ public static class ExtrawnersExt {
     return false;
   }
  
-  public static T GetDynState<T>(this PartSimState pss, string entry) where T : new() {
+  public static T GetDynStateOrDef<T>(this PartSimState pss, string entry) where T : new() {
     DynamicData dyn_pss = new(pss);
     object? maybeState = dyn_pss.Get(entry);
     T state;
@@ -148,7 +148,7 @@ public static class ExtrawnersExt {
     DynamicData dyn_pss = new(pss);
     dyn_pss.Set(entry, to);
   }
-  public static ExtrawnersDynState GetDefaultDynState(this PartSimState pss) => pss.GetDynState<ExtrawnersDynState>("defaultState");
+  public static ExtrawnersDynState GetDefaultDynState(this PartSimState pss) => pss.GetDynStateOrDef<ExtrawnersDynState>("defaultState");
 
   /// <summary> A handful of things utilize a few 'dynamic' states by default if nothing else
   /// is specified. <br></br><br></br>
