@@ -15,6 +15,7 @@ using Song = class_186;
 using VanillaAtoms = Brimstone.API.VanillaAtoms;
 using BF = System.Reflection.BindingFlags;
 using static ExtrawnersExt;
+using static ExtrawnersMod;
 
 #nullable enable
 public static class Presets {
@@ -60,14 +61,51 @@ public static class Presets {
         if (glyphIndex == nextGlyph) {
           SpawnerGlyph.DrawFullBaseFromHexesAndBonds(renderer, hexes, sortaBonds);
           SpawnerGlyph.DrawMolAsIfInput(moleculesBag[(int)Math.Floor(seb.AccumulatedTime() % molCountF)],
-            seb, pss, pos, part);
+            seb, pss, pos, part, maybeSimStarted: seb.method_503() != enum_128.Stopped);
         }
       };
-      gd.logicFn += (sim, when) => {
+      gd.logicFn += (Sim sim, LogicWhen when) => {
         var seb = sim.SEB();
         foreach (var thisPart in sim.PartList().Where(p => p.Type() == SpawnerGlyph.partTypes[nextGlyph])) {
-          var pss = PSS(seb, thisPart);
-          SpawnerGlyph.AsIfInput(sim, moleculesBag.First(), pss, thisPart, when);
+          var pss = PSS(seb, thisPart); 
+          if (when == LogicWhen.PRE_CYCLE && sim.Cycle() == 0) {
+            pss.SetDynState<Random>("rng", new(seb.Solution().Puzzle().PuzzleId().GetHashCode()));
+            pss.SetDynState<List<Molecule>>("curBag", randomBag.ToList());
+          }
+          var rng = pss.GetDynState<Random>("rng");
+          var bag = pss.GetDynState<List<Molecule>>("curBag");
+          Molecule? cur = pss.GetDynStateOrNull<Molecule?>("cur");
+          if (bag.Count == 0) {
+            bag = randomBag.ToList();
+            pss.SetDynState("curBag", bag);
+          }
+          if (cur is null) {
+            var i = rng.Next(0, bag.Count);
+            cur = bag[i];
+            bag.RemoveAt(i);
+            pss.SetDynState("cur", cur);
+          }
+
+          var outMolecRaw = cur;
+          var molecShifted = outMolecRaw.ShiftedBy(thisPart);
+          if (when == LogicWhen.PRE_CYCLE) {
+            if (DoesNotOverlap(sim, thisPart, molecShifted)) {
+              if (sim.Cycle() == 0) {
+                sim.AddMolecule(molecShifted); 
+              }
+            }
+          }
+          else if (when.FireGlyph()) {
+            if (DoesNotOverlap(sim, thisPart, molecShifted)) {
+              sim.AddMolecule(molecShifted); 
+            }
+          }
+          else if (when == LogicWhen.WELL_AFTER_CYCLE) {
+            if (DoesNotOverlap(sim, thisPart, molecShifted)) {
+              SpawnerGlyph.QueueMolAnimation(sim, outMolecRaw, pss, thisPart);
+              pss.SetDynState<Molecule?>("cur", null);
+            }
+          }
         }
       };
     };

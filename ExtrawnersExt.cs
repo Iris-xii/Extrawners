@@ -55,6 +55,8 @@ public static class ExtrawnersExt {
   public static HexRotation PartRotation(PartSimState pss) => pss.field_2726;
   public static HexRotation PartRotation(SolutionEditorBase seb, Part part) => seb.method_507().method_481(part).field_2726;
   public static Solution Solution(this SolutionEditorBase seb) => seb.method_502();
+  public static Puzzle Puzzle(this Solution sol) => sol.method_1934();
+  public static string PuzzleId(this Puzzle puzzle) => puzzle.field_2766;
   public static PartType Type(this Part part) => part.method_1159();
   public static float AnimTime(this SolutionEditorBase seb) => seb.method_504();
   public static float AccumulatedTime(this SolutionEditorBase seb) => seb.method_509();
@@ -116,7 +118,7 @@ public static class ExtrawnersExt {
     }
     return false;
   }
-
+ 
   public static T GetDynState<T>(this PartSimState pss, string entry) where T : new() {
     DynamicData dyn_pss = new(pss);
     object? maybeState = dyn_pss.Get(entry);
@@ -130,6 +132,18 @@ public static class ExtrawnersExt {
     }
     return state;
   }
+    public static T? GetDynStateOrNull<T>(this PartSimState pss, string entry) where T: class? {
+    DynamicData dyn_pss = new(pss);
+    object? maybeState = dyn_pss.Get(entry);
+    T state;
+    if (maybeState is not null) {
+      state = (T)maybeState;
+    }
+    else {
+      return null; 
+    }
+    return state;
+  }
   public static void SetDynState<T>(this PartSimState pss, string entry, T to) {
     DynamicData dyn_pss = new(pss);
     dyn_pss.Set(entry, to);
@@ -139,7 +153,7 @@ public static class ExtrawnersExt {
   /// <summary> A handful of things utilize a few 'dynamic' states by default if nothing else
   /// is specified. <br></br><br></br>
   /// Call this on every Extrawners part that utilizes these to reset them. </summary>
-  public static void AutoStatesReset(Sim sim, Part part,bool isOutput) {
+  internal static void AutoStatesReset(Sim sim, Part part,bool isOutput) {
     var pss = PSS(sim.SEB(), part);
     if (sim.Cycle() == 0) {
       pss.SetDynState("defaultState", new ExtrawnersDynState() {
