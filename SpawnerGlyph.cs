@@ -76,29 +76,39 @@ public static class SpawnerGlyph {
 
   public static void DrawFullBaseFromMol(
       class_195 renderer,
-      Molecule mol) {
+      Molecule mol,
+      float offset_x = -23f,
+      float offset_y = 24f,
+      Texture? tbase = null,
+      Texture? ring = null,
+      Texture? bond = null) {
     var hexes = mol.method_1100().Select(a => a.Key);
     foreach (var hex in hexes) {
-      DrawBase(renderer, hex);
+      DrawBase(renderer, hex, tbase, ring);
     }
     foreach (var c277 in mol.method_1101()) {
       var from = c277.field_2187;
       var to = c277.field_2188;
-      DrawBaseBond(renderer, from: from, to: to);
+      DrawBaseBond(renderer, from: from, to: to, offset_x, offset_y, bond);
     }
   }
-  public static void DrawFullBaseFromHexesAndBonds<H,B>(
+  public static void DrawFullBaseFromHexesAndBonds<H, B>(
     class_195 renderer,
     H hexes,
-    B bonds
-    ) where H: IEnumerable<HexIndex> where B: IEnumerable<Pair<HexIndex,HexIndex>> { 
+    B bonds,
+    float offset_x = -23f,
+    float offset_y = 24f,
+    Texture? tbase = null,
+    Texture? ring = null,
+    Texture? bond = null)
+     where H : IEnumerable<HexIndex> where B : IEnumerable<Pair<HexIndex, HexIndex>> {
     foreach (var hex in hexes) {
-      DrawBase(renderer, hex);
+      DrawBase(renderer, hex, tbase, ring);
     }
     foreach (var c277 in bonds) {
       var from = c277.Left;
       var to = c277.Right;
-      DrawBaseBond(renderer, from: from, to: to);
+      DrawBaseBond(renderer, from: from, to: to, offset_x, offset_y, bond);
     }
   }
 
@@ -108,10 +118,11 @@ public static class SpawnerGlyph {
       HexIndex from,
       HexIndex to,
       float offset_x = -23f,
-      float offset_y = 24f) {
+      float offset_y = 24f,
+      Texture? bond = null) {
     float angle = class_187.field_1742.method_492(to - from).Angle();
     var OFFSET = new Vector2(offset_x, offset_y); //new Vector2(-23f, 20f);
-    renderer.method_526(Resources.pipe_bond,
+    renderer.method_526(bond ?? Resources.pipe_bond,
       from,
       Vector2.Zero,
       OFFSET,
@@ -119,20 +130,22 @@ public static class SpawnerGlyph {
   }
   public static void DrawBase(
       class_195 renderer,
-      HexIndex hexPos) {
+      HexIndex hexPos,
+      Texture? tbase = null,
+      Texture? ring = null) {
     //renderer.method_530(base_empty_fuzz, hexPos, 0f);
-    renderer.method_530(Resources.pipe_base, hexPos, 0f);
-    renderer.method_528(Resources.pipe_ring, hexPos, Vector2.Zero);
+    renderer.method_530(tbase ?? Resources.pipe_base, hexPos, 0f);
+    renderer.method_528(ring ?? Resources.pipe_ring, hexPos, Vector2.Zero);
 
   }
   public static void DrawMolAsIfInput(Molecule rawM,
     SolutionEditorBase seb,
     PartSimState pss,
     Vector2 rendererPos,
-    Part part, 
+    Part part,
     Molecule? maybeAnimateMolecule = null) {
     var state = pss.GetDefaultDynState();
-    Molecule? animateMolecule = maybeAnimateMolecule ?? state.animatingMolecule; 
+    Molecule? animateMolecule = maybeAnimateMolecule ?? state.animatingMolecule;
     if (seb.method_503() == enum_128.Stopped) { DrawMol(rawM, pss, rendererPos, part); }
     if (animateMolecule is not null) {
       DrawMol(animateMolecule, pss, rendererPos, part, fractionOnBoard: seb.AnimTime());

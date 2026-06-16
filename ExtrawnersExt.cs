@@ -164,6 +164,18 @@ public static class ExtrawnersExt {
     }
     return state;
   }
+  public static T? GetDynStateOrNull<T>(this PartType pt, string entry) where T : class? {
+    DynamicData dyn_pss = new(pt);
+    object? maybeState = dyn_pss.Get(entry);
+    T state;
+    if (maybeState is not null) {
+      state = (T)maybeState;
+    }
+    else {
+      return null;
+    }
+    return state;
+  }
   public static T? GetDynStateOrNull<T>(this PartSimState pss, string entry) where T : class? {
     DynamicData dyn_pss = new(pss);
     object? maybeState = dyn_pss.Get(entry);
@@ -178,6 +190,10 @@ public static class ExtrawnersExt {
   }
   public static void SetDynState<T>(this PartSimState pss, string entry, T to) {
     DynamicData dyn_pss = new(pss);
+    dyn_pss.Set(entry, to);
+  }
+  public static void SetDynState<T>(this PartType pt, string entry, T to) {
+    DynamicData dyn_pss = new(pt);
     dyn_pss.Set(entry, to);
   }
   public static ExtrawnersDynState GetDefaultDynState(this PartSimState pss) => pss.GetDynStateOrDef<ExtrawnersDynState>("defaultState");

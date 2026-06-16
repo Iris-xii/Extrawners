@@ -72,6 +72,8 @@ public sealed partial class ExtrawnersMod {
           new Molecule().Atom("earth",-2,2).Atom("earth",-1,1).Atom("fire",0,0).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,-2,2,-1,1),
           new Molecule().Atom("earth",0,0).Atom("earth",-2,2).Atom("salt",-1,1).Atom("quicksilver",-3,2).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,-2,2,-1,1).Bond((enum_126)1,-3,2,-2,2),
           new Molecule().Atom("water",0,0).Atom("quicksilver",-1,1).Bond((enum_126)1,-1,1,0,0),
+        }, dependentOutputs: new Presets.DependentOutput[] {
+          new() {outputGlyphIndex = 1, multiplier = new int[]{1,1,1,2} }
         }),
         Presets.MultiOutput(new() {
           new Molecule().Atom("iron",0,0).Atom("quicksilver",0,-1).Atom("quicksilver",-1,1).Atom("quicksilver",1,0).Bond((enum_126)1,0,-1,0,0).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,0,0,1,0),
@@ -90,7 +92,7 @@ public sealed partial class ExtrawnersMod {
           new Molecule().Atom("earth",-2,2).Atom("earth",-1,1).Atom("fire",0,0).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,-2,2,-1,1),
           new Molecule().Atom("earth",0,0).Atom("earth",-2,2).Atom("salt",-1,1).Atom("quicksilver",-3,2).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,-2,2,-1,1).Bond((enum_126)1,-3,2,-2,2),
           new Molecule().Atom("water",0,0).Atom("quicksilver",-1,1).Bond((enum_126)1,-1,1,0,0),
-        },requiredProducts: 16,sinkAny: true, wrongMolCrashesSim: true)
+        },requiredProducts: 16,sinkAny: true, wrongMolCrashesSim: true),
       });
       m2 = m3;
       puzzleGlyphData.Add("disabled-c248888215006990", new() {
