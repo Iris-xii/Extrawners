@@ -60,23 +60,25 @@ public static class ExtrawnersExt {
   public static PartType Type(this Part part) => part.method_1159();
   public static float AnimTime(this SolutionEditorBase seb) => seb.method_504();
   public static float AccumulatedTime(this SolutionEditorBase seb) => seb.method_509();
+  public static enum_128 IsRunning(this SolutionEditorBase seb) => seb.method_503();
 
   public static SolutionEditorBase SEB(this Sim sim) => sim.field_3818;
   public static void AddMolecule(this Sim sim, Molecule m) => sim.field_3823.Add(m);
   public static bool RemoveMolecule(this Sim sim, Molecule m) => sim.field_3823.Remove(m);
   public static Molecule ShiftedBy(this Molecule m, Part part) => m.ShiftedBy(part.method_1161(), part.method_1163());
   public static Molecule ShiftedBy(this Molecule m, HexIndex shift, HexRotation rot) => m.method_1115(rot).method_1117(shift);
+  public static Molecule SimCoordsToPart(this Molecule m, Part part) => m.method_1117(-part.method_1161()).method_1115(part.method_1163().Negative());
   public static List<Part> PartList(this Solution solution) => solution.field_3919;
   public static List<Part> PartList(this Sim sim) => sim.field_3818.method_502().field_3919;
   public static int Cycle(this Sim sim) => sim.method_1818();
 
-  public static void SetHexesToMol(this PartType t,Molecule m) => 
+  public static void SetHexesToMol(this PartType t, Molecule m) =>
     t.field_1540 = m.method_1100().Select(a => a.Key).ToArray();
-  public static void SetHexesToAllMols(this PartType t,IEnumerable<Molecule> mls) => 
+  public static void SetHexesToAllMols(this PartType t, IEnumerable<Molecule> mls) =>
     t.field_1540 = mls.SelectMany(m => m.method_1100().Keys).Distinct().ToArray();
-  public static void SetName(this PartType t,string name) =>
+  public static void SetName(this PartType t, string name) =>
     t.field_1529 = class_134.method_253(name, string.Empty);
-  public static void SetDescription(this PartType t,string desc) =>
+  public static void SetDescription(this PartType t, string desc) =>
     t.field_1530 = class_134.method_253(desc, string.Empty);
 
 
@@ -98,6 +100,29 @@ public static class ExtrawnersExt {
 
   public static Func<Molecule, Molecule, bool> molecMatchesExact =
       typeof(Sim).GetMethod("method_1844", BF.NonPublic | BF.Static).CreateDelegate<Func<Molecule, Molecule, bool>>();
+  public static bool MolecMatchesSinkAny(Molecule simMolecShifted, Molecule templateShifted) {
+    // Serializing them and de-serializing them is a bit jank but
+    // I didn't feel like writing a clone function by hand and otherwise
+    // there is weird action at a distance from the molecules referencing
+    // the same objects 
+    Molecule simTemplateMutated = new PuzzleModel.MoleculeM(templateShifted).FromModel();
+    Molecule simMutated = new PuzzleModel.MoleculeM(simMolecShifted).FromModel();
+    List<HexIndex> inBaseButNotGrabbed = new();
+    foreach (var kv in simTemplateMutated.method_1100()) { // BASE
+      kv.Value.field_2275 = VanillaAtoms.salt;
+      inBaseButNotGrabbed.Add(kv.Key);
+    }
+    foreach (var kv in simMutated.method_1100()) { // INPUT ATTEMPT
+      kv.Value.field_2275 = VanillaAtoms.salt;
+      inBaseButNotGrabbed.Remove(kv.Key);
+    }
+    foreach (var hi in inBaseButNotGrabbed) {
+      simTemplateMutated.method_1107(hi);
+    }
+    return molecMatchesExact(simTemplateMutated, simMutated);
+    //TODO: bond adjusting and improve this, it's just yoinked from Extransmissions.
+  }
+
   public static bool MoleculeHeld(this Sim sim, Molecule molec) {
     return sim.HeldGrippers.Any((gripper) => {
       var pss = PSS(sim.SEB(), gripper);
@@ -118,7 +143,14 @@ public static class ExtrawnersExt {
     }
     return false;
   }
- 
+
+  public static void method_1854_crash(this Sim s,string param_5403, HexIndex param_5404, HexIndex param_5405) {
+    Vector2 vector = class_187.field_1742.method_492(param_5404);
+    Vector2 vector2 = class_187.field_1742.method_492(param_5405);
+    s.field_3818.method_518(0f, param_5403, new Vector2[2] { vector, vector2 });
+  }
+
+
   public static T GetDynStateOrDef<T>(this PartSimState pss, string entry) where T : new() {
     DynamicData dyn_pss = new(pss);
     object? maybeState = dyn_pss.Get(entry);
@@ -132,7 +164,7 @@ public static class ExtrawnersExt {
     }
     return state;
   }
-    public static T? GetDynStateOrNull<T>(this PartSimState pss, string entry) where T: class? {
+  public static T? GetDynStateOrNull<T>(this PartSimState pss, string entry) where T : class? {
     DynamicData dyn_pss = new(pss);
     object? maybeState = dyn_pss.Get(entry);
     T state;
@@ -140,7 +172,7 @@ public static class ExtrawnersExt {
       state = (T)maybeState;
     }
     else {
-      return null; 
+      return null;
     }
     return state;
   }
@@ -153,7 +185,7 @@ public static class ExtrawnersExt {
   /// <summary> A handful of things utilize a few 'dynamic' states by default if nothing else
   /// is specified. <br></br><br></br>
   /// Call this on every Extrawners part that utilizes these to reset them. </summary>
-  internal static void AutoStatesReset(Sim sim, Part part,bool isOutput) {
+  internal static void AutoStatesReset(Sim sim, Part part, bool isOutput) {
     var pss = PSS(sim.SEB(), part);
     if (sim.Cycle() == 0) {
       pss.SetDynState("defaultState", new ExtrawnersDynState() {
@@ -184,5 +216,16 @@ public static class ExtrawnersExt {
     var all_atoms = QApi.ModAtomTypes.ToList();
     all_atoms.AddRange(VanillaAtomTypes);
     return all_atoms.Where(a => a.QuintAtomType.ToLowerInvariant() == name.ToLowerInvariant()).FirstOrDefault();
+  }
+
+  internal static void HexesAndBonds(IEnumerable<Molecule> molecules,
+      out HashSet<HexIndex> hexes,
+      out HashSet<Pair<HexIndex, HexIndex>> sortaBonds) {
+    hexes = new();
+    sortaBonds = new();
+    foreach (var mol in molecules) {
+      hexes.UnionWith(mol.method_1100().Select(a => a.Key));
+      sortaBonds.UnionWith(mol.method_1101().Select(a => new Pair<HexIndex, HexIndex>(a.field_2187, a.field_2188)));
+    }
   }
 }

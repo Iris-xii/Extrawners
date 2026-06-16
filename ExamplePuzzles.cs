@@ -16,7 +16,7 @@ using Texture = class_256;
 using Song = class_186;
 using VanillaAtoms = Brimstone.API.VanillaAtoms;
 using BF = System.Reflection.BindingFlags;
-using static ExtrawnersExt; 
+using static ExtrawnersExt;
 
 using static LogicWhen;
 
@@ -62,20 +62,44 @@ public sealed partial class ExtrawnersMod {
         .Bond(BondKinds.normal, 1, -1, 0, 0)
         .Bond(BondKinds.normal, 2, -1, 2, -2)
         .Bond(BondKinds.normal, 1, -1, 2, -2);
-      
+
       Presets.presetsTable.Add("c248888215006990", new List<Presets.Preset>() {
         Presets.RandomInputRule(new() {m1,m2,m3})
       });
+      Presets.presetsTable.Add("c019087729916591", new() {
+        Presets.RandomInputRule(new() {
+          new Molecule().Atom("iron",0,0).Atom("quicksilver",0,-1).Atom("quicksilver",-1,1).Atom("quicksilver",1,0).Bond((enum_126)1,0,-1,0,0).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,0,0,1,0),
+          new Molecule().Atom("earth",-2,2).Atom("earth",-1,1).Atom("fire",0,0).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,-2,2,-1,1),
+          new Molecule().Atom("earth",0,0).Atom("earth",-2,2).Atom("salt",-1,1).Atom("quicksilver",-3,2).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,-2,2,-1,1).Bond((enum_126)1,-3,2,-2,2),
+          new Molecule().Atom("water",0,0).Atom("quicksilver",-1,1).Bond((enum_126)1,-1,1,0,0),
+        }),
+        Presets.MultiOutput(new() {
+          new Molecule().Atom("iron",0,0).Atom("quicksilver",0,-1).Atom("quicksilver",-1,1).Atom("quicksilver",1,0).Bond((enum_126)1,0,-1,0,0).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,0,0,1,0),
+          new Molecule().Atom("earth",-2,2).Atom("earth",-1,1).Atom("fire",0,0).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,-2,2,-1,1),
+          new Molecule().Atom("earth",0,0).Atom("earth",-2,2).Atom("salt",-1,1).Atom("quicksilver",-3,2).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,-2,2,-1,1).Bond((enum_126)1,-3,2,-2,2),
+          new Molecule().Atom("water",0,0).Atom("quicksilver",-1,1).Bond((enum_126)1,-1,1,0,0),
+        },requiredProducts: 16),
+        Presets.MultiOutput(new() {
+          new Molecule().Atom("iron",0,0).Atom("quicksilver",0,-1).Atom("quicksilver",-1,1).Atom("quicksilver",1,0).Bond((enum_126)1,0,-1,0,0).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,0,0,1,0),
+          new Molecule().Atom("earth",-2,2).Atom("earth",-1,1).Atom("fire",0,0).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,-2,2,-1,1),
+          new Molecule().Atom("earth",0,0).Atom("earth",-2,2).Atom("salt",-1,1).Atom("quicksilver",-3,2).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,-2,2,-1,1).Bond((enum_126)1,-3,2,-2,2),
+          new Molecule().Atom("water",0,0).Atom("quicksilver",-1,1).Bond((enum_126)1,-1,1,0,0),
+        },requiredProducts: 16,sinkAny: true),
+        Presets.MultiOutput(new() {
+          new Molecule().Atom("iron",0,0).Atom("quicksilver",0,-1).Atom("quicksilver",-1,1).Atom("quicksilver",1,0).Bond((enum_126)1,0,-1,0,0).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,0,0,1,0),
+          new Molecule().Atom("earth",-2,2).Atom("earth",-1,1).Atom("fire",0,0).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,-2,2,-1,1),
+          new Molecule().Atom("earth",0,0).Atom("earth",-2,2).Atom("salt",-1,1).Atom("quicksilver",-3,2).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,-2,2,-1,1).Bond((enum_126)1,-3,2,-2,2),
+          new Molecule().Atom("water",0,0).Atom("quicksilver",-1,1).Bond((enum_126)1,-1,1,0,0),
+        },requiredProducts: 16,sinkAny: true, wrongMolCrashesSim: true)
+      });
       m2 = m3;
-      return;
-
-      puzzleGlyphData.Add("c248888215006990", new() {
+      puzzleGlyphData.Add("disabled-c248888215006990", new() {
         origins = new() { new(0, 0), new(3, 3), new(-4, 0), new(4, 2) },
         partTypeModify = (partTypes, sol) => {
           partTypes[0].field_1540 = m0.method_1100().Select(a => a.Key).ToArray();
           partTypes[1].field_1540 = m1.method_1100().Select(a => a.Key).ToArray();
           partTypes[2].field_1540 = m2.method_1100().Select(a => a.Key).ToArray();
-          partTypes[3].field_1540 = m3.method_1100().Select(a => a.Key).ToArray(); 
+          partTypes[3].field_1540 = m3.method_1100().Select(a => a.Key).ToArray();
         },
         partRenderer = (glyphIndex, part, pos, seb, renderer) => {
           var pss = PSS(seb, part);

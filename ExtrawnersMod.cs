@@ -3,6 +3,7 @@ using Quintessential;
 using MonoMod.RuntimeDetour;
 using MonoMod.Cil;
 using Quintessential.Serialization;
+using Quintessential.Settings;
 
 namespace Extrawners;
 
@@ -21,6 +22,11 @@ using static ExtrawnersExt;
 #pragma warning disable CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
 //dotnet build;rm Extrawners.dll;cp bin/Debug/net4.5.2/Extrawners.dll ./
 public sealed partial class ExtrawnersMod : QuintessentialMod {
+
+
+  [SettingsLabel("Print Molecules to log on level load?")]
+  internal static bool printMoleculesOnLoad = true;
+
   public static Dictionary<string, GlyphData> puzzleGlyphData = new();
   public static AtomType[] VanillaAtomTypes {
     get => new AtomType[]{
@@ -97,7 +103,7 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
       .Where(a => a.Key == puzzleId)
       .Select(a => a.Value)
       .FirstOrDefault();
-    maybeGlyphData ??= Presets.LoadPresets(puzzle,solution);
+    maybeGlyphData ??= Presets.LoadPresets(puzzle, solution);
     if (maybeGlyphData is GlyphData glyphData) {
       if (glyphData.origins.Count > SpawnerGlyph.MAX_SPAWNERS) {
         throw new ArgumentOutOfRangeException($"Only {SpawnerGlyph.MAX_SPAWNERS} max spawner glyphs are allowed at a time. Bug me (Iris) to increase this if you need more.");
@@ -130,12 +136,13 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
       Solution solution) {
     Puzzle puzzle = solution.method_1934();
     var puzzleId = puzzle.field_2766;
+    if (printMoleculesOnLoad) { PrintMoleculesOnLoad(puzzle); }
 
     GlyphData? maybeGlyphData = puzzleGlyphData
       .Where(a => a.Key == puzzleId)
       .Select(a => a.Value)
       .FirstOrDefault();
-    maybeGlyphData ??= Presets.LoadPresets(puzzle,solution);
+    maybeGlyphData ??= Presets.LoadPresets(puzzle, solution);
     if (maybeGlyphData is GlyphData glyphData) {
       if (glyphData.origins.Count > SpawnerGlyph.MAX_SPAWNERS) {
         throw new ArgumentOutOfRangeException($"Only {SpawnerGlyph.MAX_SPAWNERS} max spawner glyphs are allowed at a time. Bug me (Iris) to increase this if you need more.");
@@ -150,6 +157,29 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     //if(partList.All(p => p.method_1159().field_1528 != SpawnerGlyph.PART_ID)) {}
     orig(self, solution);
   }
+
+  private static void PrintMoleculesOnLoad(Puzzle puzzle) {
+    static string Dump(Molecule m) {  
+      var stringEnumerator = m.method_1100()
+      .Select(a => $".Atom(\"{a.Value.field_2275.QuintAtomType}\",{a.Key.Q},{a.Key.R})")
+      .Concat(
+        m.method_1101().Select(a => 
+        $".Bond((enum_126){(int) a.field_2186},{a.field_2187.Q},{a.field_2187.R},{a.field_2188.Q},{a.field_2188.R})")
+      );
+      return String.Join(String.Empty,stringEnumerator);
+    }
+    PuzzleInputOutput[] pInput = puzzle.field_2770;
+    PuzzleInputOutput[] pOutput = puzzle.field_2771;
+    for (int i = 0; i < pInput.Length; i++) {
+      Log($"input@{puzzle.PuzzleId()} #{i}:\n" +
+      $"var input{i} = new Molecule(){Dump(pInput[i].field_2813)};");
+    }
+    for (int i = 0; i < pOutput.Length; i++) {
+      Log($"output@{puzzle.PuzzleId()} #{i}:\n" +
+      $"var output{i} = new Molecule(){Dump(pOutput[i].field_2813)};");
+    }
+  }
+
   public Hook hook_GameLogic_method_946;
   internal delegate void origOnGameLogicMethod945(GameLogic self, IScreen param_4617);
   internal static void OnGameLogicMethod945(
@@ -181,7 +211,7 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     foreach (var part in s.PartList().Where(p => SpawnerGlyph.partTypes.Contains(p.Type()))) {
       var pss = PSS(s.SEB(), part);
       var state = pss.GetDefaultDynState();
-      if (state.isOutput && pss.CurrentOutputs() < part.GetRequiredOutputs()) {
+      if (state.isOutput && (pss.CurrentOutputs() < part.GetRequiredOutputs())) {
         return false;
       }
     }

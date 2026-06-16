@@ -150,11 +150,9 @@ public static class SpawnerGlyph {
     DrawMol(rawM, pss, rendererPos, part, shadowStrength: 0f, alpha: 0.4f);
     if (animateMolecule is not null) {
       var alpha = seb.AnimTime() < 0.5f ? 1f : class_162.method_416(seb.AnimTime(), 0.5f, 1f, 1f, 0f);
-      DrawMol(rawM, pss, rendererPos, part, fractionOnBoard: class_162.method_416(seb.AnimTime(), 0f, 1f, 1f, 0f), alpha: alpha);
-      //DrawMol(rawM, pss, rendererPos, part, fractionOnBoard: class_162.method_416(seb.AnimTime(), 0f, 1f, 1f, 0f), alpha: 1f);
-      //DrawMol(rawM, pss, rendererPos, part, alpha: 0.05f, fractionOnBoard: 1f, light:true );
+      DrawMol(animateMolecule, pss, rendererPos, part, fractionOnBoard: class_162.method_416(seb.AnimTime(), 0f, 1f, 1f, 0f), alpha: alpha);
     }
-    if (seb is SolutionEditorScreen ses && state.simStarted) {
+    if (seb is SolutionEditorScreen ses && seb.method_503() != enum_128.Stopped) {
       string currentCount = $"{pss.CurrentOutputs()}/{part.GetRequiredOutputs()}";
       Vector2 off = renderer.field_1797;
       class_135.method_272(class_238.field_1989.field_101.field_783, off);
