@@ -22,6 +22,9 @@ public static class Presets {
   public delegate void Preset(GlyphData gdToModify, Puzzle puzzle, Solution sol);
   public static Dictionary<string, List<Preset>> presetsTable = new();
 
+  public static void Add(Puzzle puzzle,List<Preset> presets) => presetsTable.Add(puzzle.PuzzleId(),presets);
+  public static void Add(string puzzleID,List<Preset> presets) => presetsTable.Add(puzzleID,presets);
+
   internal static GlyphData? LoadPresets(Puzzle puzzle, Solution sol, bool actualSolLoad) {
     List<int> inputsToRemove = new();
     List<int> outputsToRemove = new();
@@ -71,7 +74,8 @@ public static class Presets {
   public static Preset MultiOutput(List<Molecule> okOutputs,
       bool sinkAny = false,
       bool wrongMolCrashesSim = false,
-      int requiredProducts = 6) {
+      int requiredProducts = 6,
+      string customName = "") {
     if (requiredProducts <= 0) { requiredProducts = 6; }
     HexesAndBonds(okOutputs, out var hexes, out var sortaBonds);
     float molCountF = (float)okOutputs.Count;
@@ -79,7 +83,8 @@ public static class Presets {
       var nextGlyph = PushOrigin(gd);
       gd.partTypeModify += (partTypes, sol) => {
         partTypes[nextGlyph].SetHexesToAllMols(okOutputs);
-        string name = okOutputs.Count > 1 ? "Multi-Output" : "Output";
+        string name = customName != "" ? customName
+          : okOutputs.Count > 1 ? "Multi-Output" : "Output";
         string descPartOne = okOutputs.Count > 1 ? "This output accepts multiple potential products." : "A product for the alchemical engine.";
         string descPartTwo = "";
         string descPartDependant = partTypes[nextGlyph].GetDynStateOrNull<Queue<Molecule>>("dep") == null ? "" : "\nThis output additionally depends on one of the inputs, requiring that you output a certain molecule after pulling a matching molecule from the input.";
@@ -173,7 +178,8 @@ public static class Presets {
   }
 
   public static Preset RandomInputRule(List<Molecule> randomBag,
-      DependentOutput[]? dependentOutputs = null) {
+      DependentOutput[]? dependentOutputs = null,
+      string customName = "") {
     void WhenAddMolRaw(Molecule rawM) {
       int molIdx = -1;
       for (int i = 0; i < randomBag.Count; i++) {
@@ -201,16 +207,18 @@ public static class Presets {
       var nextGlyph = PushOrigin(gd);
       gd.partTypeModify += (partTypes, sol) => {
         partTypes[nextGlyph].SetHexesToAllMols(randomBag);
-        partTypes[nextGlyph].SetName("Random Input");
-        partTypes[nextGlyph].SetDescription("This reagent may be one of several randomly chosen molecules.");
+        string maybeRandomInput = randomBag.Count > 1 ? "Random Input" : "Reagent";
+        string maybeRandomDesc =  randomBag.Count > 1 ? "This reagent may be one of several randomly chosen molecules." : "A reagent for the alchemical engine.";
+        partTypes[nextGlyph].SetName(customName == "" ? maybeRandomInput : customName);
+        partTypes[nextGlyph].SetDescription(maybeRandomDesc);
       };
       gd.partRenderer += (glyphIndex, part, pos, seb, renderer) => {
         var pss = PSS(seb, part);
         if (glyphIndex == nextGlyph) {
           SpawnerGlyph.DrawFullBaseFromHexesAndBonds(renderer, hexes, sortaBonds,
-            tbase: Resources.blue_pipe_base,
-            ring: Resources.blue_pipe_ring,
-            bond: Resources.blue_pipe_bond);
+            tbase: randomBag.Count > 1 ? Resources.blue_pipe_base : Resources.pipe_base,
+            ring: randomBag.Count > 1 ? Resources.blue_pipe_ring : Resources.pipe_ring,
+            bond: randomBag.Count > 1 ? Resources.blue_pipe_bond : Resources.pipe_bond);
           SpawnerGlyph.DrawMolAsIfInput(randomBag[(int)Math.Floor(seb.AccumulatedTime() % molCountF)],
             seb, pss, pos, part);
         }
@@ -303,7 +311,7 @@ public static class Presets {
   public struct DependentOutput {
     public int outputGlyphIndex;
     public Molecule[][] molecules = new Molecule[0][];
- 
+
     public DependentOutput() { outputGlyphIndex = -1; }
     public DependentOutput(int idx) { outputGlyphIndex = idx; }
   }

@@ -67,9 +67,10 @@ public sealed partial class ExtrawnersMod {
       var bisalt = new Molecule().Atom("salt", 0, 0).Atom("salt", 0, 1).Bond(enum_126.Standard, 0, 0, 0, 1);
       var fire = new Molecule().Atom("fire", 0, 0);
       var bifire = new Molecule().Atom("fire", 0, 0).Atom("fire", 0, 1).Bond(enum_126.Standard, 0, 0, 0, 1);
+      var saltAndFire = new Molecule().Atom("salt", 0, 0).Atom("fire", 0, 1).Bond(enum_126.Standard, 0, 0, 0, 1);
 
-      Presets.presetsTable.Add("c248888215006990", new List<Presets.Preset>() {
-        Presets.RandomInputRule(new() {salt,bisalt,fire,bifire},
+      Presets.Add("c248888215006990", new List<Presets.Preset>() {
+        Presets.RandomInputRule(new() {salt,bisalt,fire,bifire}, customName: "Salt/Bisalt/Fire/Bifire",
           dependentOutputs: new Presets.DependentOutput[] {
             new() {outputGlyphIndex = 1, molecules = new Molecule[][] {
               new Molecule[]{salt},
@@ -78,8 +79,18 @@ public sealed partial class ExtrawnersMod {
               new Molecule[]{fire,fire},
             }}
           }),
+        Presets.MultiOutput(new() {salt,fire},customName: "Elemental Salt / Elemental Fire")
+      });
+
+      Presets.Add("c994277786629428", new() {
+        Presets.RandomInputRule(new() {saltAndFire}, dependentOutputs: new Presets.DependentOutput[] {
+          new() {outputGlyphIndex = 1, molecules = new Molecule[][] {
+            new Molecule[]{salt,fire}
+          }}
+        }),
         Presets.MultiOutput(new() {salt,fire})
       });
+
       Presets.presetsTable.Add("c019087729916591", new() {
         Presets.RandomInputRule(new() {
           new Molecule().Atom("iron",0,0).Atom("quicksilver",0,-1).Atom("quicksilver",-1,1).Atom("quicksilver",1,0).Bond((enum_126)1,0,-1,0,0).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,0,0,1,0),
