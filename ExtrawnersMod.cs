@@ -4,6 +4,7 @@ using MonoMod.RuntimeDetour;
 using MonoMod.Cil;
 using Quintessential.Serialization;
 using Quintessential.Settings;
+using MonoMod.Utils;
 
 namespace Extrawners;
 
@@ -76,6 +77,7 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     hook_Sim_method_1828 = new Hook(typeof(Sim).GetMethod("method_1828", BF.NonPublic | BF.Instance), OnSimMethod1828_SpawnScaffolds);
     hook_Sim_method_1836 = new Hook(typeof(Sim).GetMethod("method_1836", BF.NonPublic | BF.Instance), OnSimMethod_1836_WellAfterCycle);
 
+    hook_method_947 = new Hook(typeof(GameLogic).GetMethod("method_947", BF.Public | BF.Instance), OnScreenTransitionAway);
     DoExamplePuzzles();
   }
 
@@ -88,6 +90,8 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     hookApplyChanges = null;
     hook_sim_method_1825.Dispose();
     hook_sim_method_1825 = null;
+    hook_method_947.Dispose();
+    hook_method_947 = null;
   }
 
   public Hook hookApplyChanges = null;
@@ -103,7 +107,7 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
       .Where(a => a.Key == puzzleId)
       .Select(a => a.Value)
       .FirstOrDefault();
-    maybeGlyphData ??= Presets.LoadPresets(puzzle, solution);
+    maybeGlyphData ??= Presets.LoadPresets(puzzle, solution,actualSolLoad: false);
     if (maybeGlyphData is GlyphData glyphData) {
       if (glyphData.origins.Count > SpawnerGlyph.MAX_SPAWNERS) {
         throw new ArgumentOutOfRangeException($"Only {SpawnerGlyph.MAX_SPAWNERS} max spawner glyphs are allowed at a time. Bug me (Iris) to increase this if you need more.");
@@ -137,12 +141,13 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     Puzzle puzzle = solution.method_1934();
     var puzzleId = puzzle.field_2766;
     if (printMoleculesOnLoad) { PrintMoleculesOnLoad(puzzle); }
+    resetPuzzleIODeleteHack = () => { };
 
     GlyphData? maybeGlyphData = puzzleGlyphData
       .Where(a => a.Key == puzzleId)
       .Select(a => a.Value)
       .FirstOrDefault();
-    maybeGlyphData ??= Presets.LoadPresets(puzzle, solution);
+    maybeGlyphData ??= Presets.LoadPresets(puzzle, solution, actualSolLoad: true);
     if (maybeGlyphData is GlyphData glyphData) {
       if (glyphData.origins.Count > SpawnerGlyph.MAX_SPAWNERS) {
         throw new ArgumentOutOfRangeException($"Only {SpawnerGlyph.MAX_SPAWNERS} max spawner glyphs are allowed at a time. Bug me (Iris) to increase this if you need more.");
@@ -154,19 +159,28 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     //var perms = puzzle.CustomPermissions ?? new();
 
     //var partList = solution.method_1941();
-    //if(partList.All(p => p.method_1159().field_1528 != SpawnerGlyph.PART_ID)) {}
+    //if(partList.All(p => p.method_1159().field_1528 != SpawnerGlyph.PART_ID)) {} 
     orig(self, solution);
+
   }
 
+  public Hook hook_method_947;
+  private static void OnScreenTransitionAway(Action<GameLogic, Maybe<class_124>, Maybe<class_124>> orig,
+    GameLogic gl, Maybe<class_124> param_4618, Maybe<class_124> param_4619) {
+    resetPuzzleIODeleteHack();
+    orig(gl, param_4618, param_4619);
+  }
+
+
   private static void PrintMoleculesOnLoad(Puzzle puzzle) {
-    static string Dump(Molecule m) {  
+    static string Dump(Molecule m) {
       var stringEnumerator = m.method_1100()
       .Select(a => $".Atom(\"{a.Value.field_2275.QuintAtomType}\",{a.Key.Q},{a.Key.R})")
       .Concat(
-        m.method_1101().Select(a => 
-        $".Bond((enum_126){(int) a.field_2186},{a.field_2187.Q},{a.field_2187.R},{a.field_2188.Q},{a.field_2188.R})")
+        m.method_1101().Select(a =>
+        $".Bond((enum_126){(int)a.field_2186},{a.field_2187.Q},{a.field_2187.R},{a.field_2188.Q},{a.field_2188.R})")
       );
-      return String.Join(String.Empty,stringEnumerator);
+      return String.Join(String.Empty, stringEnumerator);
     }
     PuzzleInputOutput[] pInput = puzzle.field_2770;
     PuzzleInputOutput[] pOutput = puzzle.field_2771;
@@ -180,6 +194,7 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     }
   }
 
+  internal static Action resetPuzzleIODeleteHack = () => { };
   public Hook hook_GameLogic_method_946;
   internal delegate void origOnGameLogicMethod945(GameLogic self, IScreen param_4617);
   internal static void OnGameLogicMethod945(
@@ -211,7 +226,8 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     foreach (var part in s.PartList().Where(p => SpawnerGlyph.partTypes.Contains(p.Type()))) {
       var pss = PSS(s.SEB(), part);
       var state = pss.GetDefaultDynState();
-      if (state.isOutput && (pss.CurrentOutputs() < part.GetRequiredOutputs())) {
+      var partType = part.Type();
+      if ((state.isOutput || partType.GetDynStateOrDef<bool>("output")) && (pss.CurrentOutputs() < part.GetRequiredOutputs())) {
         return false;
       }
     }

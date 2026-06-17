@@ -81,6 +81,8 @@ public static class ExtrawnersExt {
   public static void SetDescription(this PartType t, string desc) =>
     t.field_1530 = class_134.method_253(desc, string.Empty);
 
+  public static void SetAsOutput(this PartType t) => t.SetDynState<bool>("output", true);
+
 
   public static void SetRequiredOutputs(this Part part, int required) => part_method_1170(part, required);
   public static int GetRequiredOutputs(this Part part) => part.method_1169();
@@ -144,7 +146,7 @@ public static class ExtrawnersExt {
     return false;
   }
 
-  public static void method_1854_crash(this Sim s,string param_5403, HexIndex param_5404, HexIndex param_5405) {
+  public static void method_1854_crash(this Sim s, string param_5403, HexIndex param_5404, HexIndex param_5405) {
     Vector2 vector = class_187.field_1742.method_492(param_5404);
     Vector2 vector2 = class_187.field_1742.method_492(param_5405);
     s.field_3818.method_518(0f, param_5403, new Vector2[2] { vector, vector2 });
@@ -153,6 +155,19 @@ public static class ExtrawnersExt {
 
   public static T GetDynStateOrDef<T>(this PartSimState pss, string entry) where T : new() {
     DynamicData dyn_pss = new(pss);
+    object? maybeState = dyn_pss.Get(entry);
+    T state;
+    if (maybeState is not null) {
+      state = (T)maybeState;
+    }
+    else {
+      state = new();
+      dyn_pss.Set(entry, state);
+    }
+    return state;
+  }
+  public static T GetDynStateOrDef<T>(this PartType pt, string entry) where T : new() {
+    DynamicData dyn_pss = new(pt);
     object? maybeState = dyn_pss.Get(entry);
     T state;
     if (maybeState is not null) {

@@ -22,15 +22,17 @@ public static class Presets {
   public delegate void Preset(GlyphData gdToModify, Puzzle puzzle, Solution sol);
   public static Dictionary<string, List<Preset>> presetsTable = new();
 
-  internal static GlyphData? LoadPresets(Puzzle puzzle, Solution sol) {
+  internal static GlyphData? LoadPresets(Puzzle puzzle, Solution sol,bool actualSolLoad) {
     var puzzleId = puzzle.field_2766;
-    var tableOk = presetsTable.TryGetValue(puzzleId, out var maybePresetsFromTable);
-    if (tableOk) {
+    if (presetsTable.TryGetValue(puzzleId, out var maybePresetsFromTable)) {
       var output = new GlyphData();
       foreach (var preset in maybePresetsFromTable) {
         preset(output, puzzle, sol);
       }
       return output;
+    }
+    else if (ExtransmissionsFormat.TryRead(puzzle, sol, out var extransmissionsGD, actualSolLoad)) {
+      return extransmissionsGD;
     }
     return null;
   }
@@ -58,6 +60,7 @@ public static class Presets {
         }
         partTypes[nextGlyph].SetName(name);
         partTypes[nextGlyph].SetDescription($"{descPartOne}{descPartTwo}{descPartDependant}");
+        partTypes[nextGlyph].SetAsOutput();
       };
       gd.partRenderer += (glyphIndex, part, pos, seb, renderer) => {
         var pss = PSS(seb, part);
@@ -281,7 +284,7 @@ public static class Presets {
   }
 
   private static int PushOrigin(GlyphData gd) {
-    gd.origins.Add(new HexIndex(gd.origins.Count, gd.origins.Count + 1 * 4));
+    gd.origins.Add(new HexIndex(gd.origins.Count - (gd.origins.Count % 2 == 0 ? 0 : 4), gd.origins.Count + 1 * 5));
     return gd.origins.Count - 1;
   }
 }
