@@ -48,39 +48,12 @@ public static class ExtransmissionsFormat {
   //   public List<PuzzleModel.PuzzleIoM>? RandomInputs = null;
   //   public List<PuzzleModel.PuzzleIoM>? RandomOutputs = null;
   // }
-  public static bool TryRead(Puzzle puzzle, Solution sol, out GlyphData glyphData, bool actualSolLoad) {
+  public static bool TryRead(Puzzle puzzle, Solution sol, out GlyphData glyphData,ref List<int> inputsToRemove, ref List<int> outputsToRemove, bool actualSolLoad) {
     glyphData = new();
     bool any = false;
-    List<int> inputsToRemove = new();
-    List<int> outputsToRemove = new();
     foreach (var customPerm in puzzle.CustomPermissions) {
       ReadCustomPermissionString(customPerm, glyphData, puzzle, sol, setTrueIfAlteredGd: ref any, inputsToRemove, outputsToRemove);
     }
-    if (any && actualSolLoad) { 
-      PuzzleInputOutput[] inputs = puzzle.field_2770;
-      PuzzleInputOutput[] outputs = puzzle.field_2771;
-      List<PuzzleInputOutput> newInputs = new();
-      List<PuzzleInputOutput> newOutputs = new();
-      for (int i = 0; i < inputs.Length; i++) {
-        if (inputsToRemove.Contains(i)) { 
-          Log($"Input #{i} will be removed.");
-          continue; }
-        newInputs.Add(inputs[i]);
-      }
-      for (int i = 0; i < outputs.Length; i++) {
-        if (outputsToRemove.Contains(i)) { 
-          Log($"Output #{i} will be removed.");
-          continue; }
-        newOutputs.Add(outputs[i]);
-      }
-      puzzle.field_2770 = newInputs.ToArray();
-      puzzle.field_2771 = newOutputs.ToArray();
-      resetPuzzleIODeleteHack += () => {
-        puzzle.field_2770 = inputs;
-        puzzle.field_2771 = outputs;
-      };
-    }
-
     return any;
   }
 

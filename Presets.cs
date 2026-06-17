@@ -22,19 +22,50 @@ public static class Presets {
   public delegate void Preset(GlyphData gdToModify, Puzzle puzzle, Solution sol);
   public static Dictionary<string, List<Preset>> presetsTable = new();
 
-  internal static GlyphData? LoadPresets(Puzzle puzzle, Solution sol,bool actualSolLoad) {
+  internal static GlyphData? LoadPresets(Puzzle puzzle, Solution sol, bool actualSolLoad) {
+    List<int> inputsToRemove = new();
+    List<int> outputsToRemove = new();
+    GlyphData? toReturn = null;
     var puzzleId = puzzle.field_2766;
     if (presetsTable.TryGetValue(puzzleId, out var maybePresetsFromTable)) {
       var output = new GlyphData();
       foreach (var preset in maybePresetsFromTable) {
         preset(output, puzzle, sol);
       }
-      return output;
+      toReturn = output;
     }
-    else if (ExtransmissionsFormat.TryRead(puzzle, sol, out var extransmissionsGD, actualSolLoad)) {
-      return extransmissionsGD;
+    else if (ExtransmissionsFormat.TryRead(puzzle, sol, out var extransmissionsGD, ref inputsToRemove, ref outputsToRemove, actualSolLoad)) {
+      toReturn = extransmissionsGD;
     }
-    return null;
+    //removal
+    if (actualSolLoad && (inputsToRemove.Count != 0 || outputsToRemove.Count != 0)) {
+      PuzzleInputOutput[] inputs = puzzle.field_2770;
+      PuzzleInputOutput[] outputs = puzzle.field_2771;
+      List<PuzzleInputOutput> newInputs = new();
+      List<PuzzleInputOutput> newOutputs = new();
+      for (int i = 0; i < inputs.Length; i++) {
+        if (inputsToRemove.Contains(i)) {
+          Log($"Input #{i} will be removed.");
+          continue;
+        }
+        newInputs.Add(inputs[i]);
+      }
+      for (int i = 0; i < outputs.Length; i++) {
+        if (outputsToRemove.Contains(i)) {
+          Log($"Output #{i} will be removed.");
+          continue;
+        }
+        newOutputs.Add(outputs[i]);
+      }
+      puzzle.field_2770 = newInputs.ToArray();
+      puzzle.field_2771 = newOutputs.ToArray();
+      resetPuzzleIODeleteHack += () => {
+        puzzle.field_2770 = inputs;
+        puzzle.field_2771 = outputs;
+      };
+    }
+    //
+    return toReturn;
   }
 
   public static Preset MultiOutput(List<Molecule> okOutputs,
