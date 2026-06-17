@@ -140,6 +140,7 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
       Solution solution) {
     Puzzle puzzle = solution.method_1934();
     var puzzleId = puzzle.field_2766;
+    ExtransmutationsCompat.OnNewSolve();
     if (printMoleculesOnLoad) { PrintMoleculesOnLoad(puzzle); }
     resetPuzzleIODeleteHack = () => { };
 

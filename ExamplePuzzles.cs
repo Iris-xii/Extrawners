@@ -24,6 +24,19 @@ public sealed partial class ExtrawnersMod {
 
   public static void DoExamplePuzzles() {
     {
+      var input0 = new Molecule().Atom("Extransmutations:ichor",0,0).Atom("salt",-1,1).Atom("fire",1,0).Bond((enum_126)1,0,0,1,0).Bond((enum_126)1,-1,1,0,0);
+      var input1 = new Molecule().Atom("lead",0,0).Atom("lead",1,-1).Bond((enum_126)1,0,0,1,-1);
+      var output0 = new Molecule().Atom("lead",0,0).Atom("lead",0,1).Atom("Extransmutations:ichor",1,1).Bond((enum_126)1,0,1,1,1).Bond((enum_126)1,0,0,0,1);
+      var salt = new Molecule().Atom("salt",0,0);
+      var fire = new Molecule().Atom("fire",0,0);
+      Presets.Add("c456745873386569",new() {
+        Presets.RandomInputRule(new() {input0}),
+        Presets.RandomInputRule(new() {input1}),
+        Presets.MultiOutput(new() {output0}),
+        Presets.MultiOutput(new() {salt,fire})
+      });
+    }
+    {
       var m0 = new Molecule()
         .Atom("extransmutations:ichor", 0, 0)
         .Atom("extransmutations:ichor", 1, 0)

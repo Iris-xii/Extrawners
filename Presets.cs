@@ -140,6 +140,7 @@ public static class Presets {
             AutoStatesReset(sim, thisPart, isOutput: true);
           }
           else if (when.FireGlyph()) {
+            ExtransmutationsCompat.OutputDoIchor(nextGlyph,thisPart,okOutputs,SpawnerGlyph.partTypes[nextGlyph].GetDynStateOrNull<Queue<Molecule>>("dep"));
             pss.GetDefaultDynState().isOutput = true;
             foreach (var rawM in okOutputs) {
               if (SpawnerGlyph.partTypes[nextGlyph].GetDynStateOrNull<Queue<Molecule>>("dep") is Queue<Molecule> q) {
@@ -227,6 +228,7 @@ public static class Presets {
         var seb = sim.SEB();
         foreach (var thisPart in sim.PartList().Where(p => p.Type() == SpawnerGlyph.partTypes[nextGlyph])) {
           var pss = PSS(seb, thisPart);
+          ExtransmutationsCompat.InputDoIchor(nextGlyph,thisPart,randomBag);
           if (when == LogicWhen.PRE_CYCLE) {
             AutoStatesReset(sim, thisPart, false);
             if (sim.Cycle() == 0) {

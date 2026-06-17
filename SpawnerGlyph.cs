@@ -257,7 +257,9 @@ public static class SpawnerGlyph {
       PartSimState pss,
       Part part,
       out Molecule accepted,
-      Func<Molecule, Molecule, bool>? molecMatchesFn = null) {
+      Func<Molecule, Molecule, bool>? molecMatchesFn = null,
+      bool doIchor = true) {
+    if (doIchor && ExtransmutationsCompat.isIchorSuppressionActive) { accepted = null!; return false; }
     molecMatchesFn ??= molecMatchesExact;
     var seb = sim.SEB();
     var templateShifted = rawTemplateM.ShiftedBy(part);
@@ -307,6 +309,8 @@ public static class SpawnerGlyph {
       QApi.AddPartTypeToPanel(pType, false);
     }
     QApi.RunAfterCycle((sim, firstHalf) => {
+      ExtransmutationsCompat.isIchorSuppressionActive = false;
+      ExtransmutationsCompat.updateIsIchorSuppressionActive(sim);
       if (firstHalf) { logicFn(sim, LogicWhen.FIRST_HALF); }
       if (!firstHalf) { logicFn(sim, LogicWhen.SECOND_HALF); }
     });
