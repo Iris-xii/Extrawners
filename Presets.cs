@@ -82,7 +82,7 @@ public static class Presets {
         string name = okOutputs.Count > 1 ? "Multi-Output" : "Output";
         string descPartOne = okOutputs.Count > 1 ? "This output accepts multiple potential products." : "A product for the alchemical engine.";
         string descPartTwo = "";
-        string descPartDependant = partTypes[nextGlyph].GetDynStateOrNull<Queue<int>>("dep") == null ? "" : "\nThis output additionally depends on one of the inputs, requiring that you output a certain molecule after pulling a matching molecule from the input.";
+        string descPartDependant = partTypes[nextGlyph].GetDynStateOrNull<Queue<Molecule>>("dep") == null ? "" : "\nThis output additionally depends on one of the inputs, requiring that you output a certain molecule after pulling a matching molecule from the input.";
         if (sinkAny && wrongMolCrashesSim) {
           descPartTwo = " It also accepts any molecule that may fit, but inserting an incorrect molecule will halt the alchemical engine.";
         }
@@ -111,10 +111,12 @@ public static class Presets {
           else {
             SpawnerGlyph.DrawFullBaseFromHexesAndBonds(renderer, hexes, sortaBonds);
           }
-          var maybeQ = SpawnerGlyph.partTypes[glyphIndex].GetDynStateOrNull<Queue<int>>("dep");
-          if (maybeQ is not null && maybeQ.Count > 0 && seb.IsRunning() != enum_128.Stopped) {
-            SpawnerGlyph.DrawMolAsIfOutput(okOutputs[maybeQ.Peek()],
-              seb, pss, renderer, pos, part);
+          var maybeQ = SpawnerGlyph.partTypes[glyphIndex].GetDynStateOrNull<Queue<Molecule>>("dep");
+          if (maybeQ is not null && seb.IsRunning() != enum_128.Stopped) {
+            if (maybeQ.Count > 0) {
+              SpawnerGlyph.DrawMolAsIfOutput(maybeQ.Peek(),
+                seb, pss, renderer, pos, part);
+            }
           }
           else {
             SpawnerGlyph.DrawMolAsIfOutput(okOutputs[(int)Math.Floor(seb.AccumulatedTime() % molCountF)],
@@ -135,8 +137,8 @@ public static class Presets {
           else if (when.FireGlyph()) {
             pss.GetDefaultDynState().isOutput = true;
             foreach (var rawM in okOutputs) {
-              if (SpawnerGlyph.partTypes[nextGlyph].GetDynStateOrNull<Queue<int>>("dep") is Queue<int> q) {
-                if (!molecMatchesExact(okOutputs[q.Peek()], rawM)) {
+              if (SpawnerGlyph.partTypes[nextGlyph].GetDynStateOrNull<Queue<Molecule>>("dep") is Queue<Molecule> q) {
+                if (!molecMatchesExact(q.Peek(), rawM)) {
                   continue;
                 }
               }
@@ -144,7 +146,7 @@ public static class Presets {
                   out var accepted, molecMatchesFn: null)) {
                 SpawnerGlyph.QueueMolAnimation(sim, rawM, pss, thisPart);
                 sim.RemoveMolecule(accepted);
-                if (SpawnerGlyph.partTypes[nextGlyph].GetDynStateOrNull<Queue<int>>("dep") is Queue<int> q2) {
+                if (SpawnerGlyph.partTypes[nextGlyph].GetDynStateOrNull<Queue<Molecule>>("dep") is Queue<Molecule> q2) {
                   q2.Dequeue();
                 }
                 class_238.field_1991.field_1868.Play(seb);
@@ -171,7 +173,6 @@ public static class Presets {
   }
 
   public static Preset RandomInputRule(List<Molecule> randomBag,
-      int bagMult = 1,
       DependentOutput[]? dependentOutputs = null) {
     void WhenAddMolRaw(Molecule rawM) {
       int molIdx = -1;
@@ -184,32 +185,22 @@ public static class Presets {
       if (molIdx == -1) { throw new InvalidDataException("molIdx is -1"); }
       if (dependentOutputs is not null) {
         foreach (var depOutput in dependentOutputs) {
-          var q = SpawnerGlyph.partTypes[depOutput.outputGlyphIndex].GetDynStateOrNull<Queue<int>>("dep");
+          var q = SpawnerGlyph.partTypes[depOutput.outputGlyphIndex].GetDynStateOrNull<Queue<Molecule>>("dep");
           q ??= new();
-          if (depOutput.multiplier is not null) {
-            int times = depOutput.multiplier[molIdx];
-            for (int i = 0; i < times; i++) {
-              q.Enqueue(molIdx);
-            }
-          }
-          else {
-            q.Enqueue(molIdx);
+          foreach (var m in depOutput.molecules[molIdx]) {
+            q.Enqueue(m);
           }
           SpawnerGlyph.partTypes[depOutput.outputGlyphIndex].SetDynState("dep", q);
         }
       }
     }
-    var moleculesBag = new List<Molecule>();
-    bagMult = bagMult < 1 ? 1 : bagMult;
-    for (int i = 0; i < bagMult; i++) {
-      moleculesBag.AddRange(randomBag);
-    }
-    float molCountF = (float)moleculesBag.Count;
+
+    float molCountF = (float)randomBag.Count;
     HexesAndBonds(randomBag, out var hexes, out var sortaBonds);
     return (gd, puzzle, sol) => {
       var nextGlyph = PushOrigin(gd);
       gd.partTypeModify += (partTypes, sol) => {
-        partTypes[nextGlyph].SetHexesToAllMols(moleculesBag);
+        partTypes[nextGlyph].SetHexesToAllMols(randomBag);
         partTypes[nextGlyph].SetName("Random Input");
         partTypes[nextGlyph].SetDescription("This reagent may be one of several randomly chosen molecules.");
       };
@@ -220,7 +211,7 @@ public static class Presets {
             tbase: Resources.blue_pipe_base,
             ring: Resources.blue_pipe_ring,
             bond: Resources.blue_pipe_bond);
-          SpawnerGlyph.DrawMolAsIfInput(moleculesBag[(int)Math.Floor(seb.AccumulatedTime() % molCountF)],
+          SpawnerGlyph.DrawMolAsIfInput(randomBag[(int)Math.Floor(seb.AccumulatedTime() % molCountF)],
             seb, pss, pos, part);
         }
       };
@@ -233,7 +224,7 @@ public static class Presets {
             if (sim.Cycle() == 0) {
               if (dependentOutputs is not null) {
                 foreach (var depOutput in dependentOutputs) {
-                  SpawnerGlyph.partTypes[depOutput.outputGlyphIndex].SetDynState("dep", new Queue<int>());
+                  SpawnerGlyph.partTypes[depOutput.outputGlyphIndex].SetDynState("dep", new Queue<Molecule>());
                 }
               }
               pss.SetDynState<Random>("rng", new(seb.Solution().Puzzle().PuzzleId().GetHashCode()));
@@ -311,7 +302,10 @@ public static class Presets {
   }
   public struct DependentOutput {
     public int outputGlyphIndex;
-    public int[]? multiplier;
+    public Molecule[][] molecules = new Molecule[0][];
+ 
+    public DependentOutput() { outputGlyphIndex = -1; }
+    public DependentOutput(int idx) { outputGlyphIndex = idx; }
   }
 
   private static int PushOrigin(GlyphData gd) {

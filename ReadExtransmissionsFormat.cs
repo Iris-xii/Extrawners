@@ -48,7 +48,7 @@ public static class ExtransmissionsFormat {
   //   public List<PuzzleModel.PuzzleIoM>? RandomInputs = null;
   //   public List<PuzzleModel.PuzzleIoM>? RandomOutputs = null;
   // }
-  public static bool TryRead(Puzzle puzzle, Solution sol, out GlyphData glyphData,ref List<int> inputsToRemove, ref List<int> outputsToRemove, bool actualSolLoad) {
+  public static bool TryRead(Puzzle puzzle, Solution sol, out GlyphData glyphData, ref List<int> inputsToRemove, ref List<int> outputsToRemove, bool actualSolLoad) {
     glyphData = new();
     bool any = false;
     foreach (var customPerm in puzzle.CustomPermissions) {
@@ -73,8 +73,16 @@ public static class ExtransmissionsFormat {
       if (type == "RandomInputRule" || type == "RandomInput") {
         var data = YamlHelper.Deserializer.Deserialize<RandomInputRule>(withoutPrefix);
         if (data is null || data.RandomBag is null) { throw new InvalidDataException($"Couldn't parse {withoutPrefix}"); }
-        List<Molecule> actualRandomBag = data.RandomBag.Select(q => q.Molecule.FromModel()).ToList();
-        Presets.RandomInputRule(actualRandomBag, data.BagMult)(gd, p, sol);
+        List<Molecule> rawRandomBag = data.RandomBag.Select(q => q.Molecule.FromModel()).ToList();
+        List<Molecule> multipliedRandomBag = new();
+        foreach (var item in rawRandomBag) {
+          var limit = data.BagMult;
+          limit = limit < 1 ? 1 : limit;
+          for (int i = 0; i < limit; i++) {
+            multipliedRandomBag.Add(item);
+          }
+        }
+        Presets.RandomInputRule(multipliedRandomBag)(gd, p, sol);
         inputsToRemove.Add(data.InputMol);
         setTrueIfAlteredGd = true;
       }
