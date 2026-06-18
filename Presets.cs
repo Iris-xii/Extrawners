@@ -57,10 +57,10 @@ public static class Presets {
   }
 
   public static void RemoveInputsAndOutputsOnlyDuringSolve(Puzzle puzzle, List<int> inputsToRemove, List<int> outputsToRemove) {
-    removeTable.Add(puzzle.PuzzleId(), new Pair<List<int>, List<int>>(inputsToRemove, outputsToRemove));
+    removeTable[puzzle.PuzzleId()] = new Pair<List<int>, List<int>>(inputsToRemove, outputsToRemove);
   }
   public static void RemoveInputsAndOutputsOnlyDuringSolve(string puzzleId, List<int> inputsToRemove, List<int> outputsToRemove) {
-    removeTable.Add(puzzleId, new Pair<List<int>, List<int>>(inputsToRemove, outputsToRemove));
+    removeTable[puzzleId] = new Pair<List<int>, List<int>>(inputsToRemove, outputsToRemove);
   }
 
   private static void RemoveInputsAndOutputsInternal(Puzzle puzzle, List<int> inputsToRemove, List<int> outputsToRemove) {
@@ -115,6 +115,7 @@ public static class Presets {
     return (gd, puzzle, sol) => {
       var nextGlyph = PushOrigin(gd, forcedOrigin);
       gd.partTypeModify += (partTypes, sol) => {
+        partTypes[nextGlyph].SetHexesToAllMols(combined);
         string name = spawnOnOutput.Length == 0 ? "Catalyst" : "External Process";
         string howMany = spawnAtBeginning.Count > 1 ? $"producing {spawnAtBeginning.Count} molecules to be used as a catalyst." : "producing a single molecule to be used as a catalyst.";
         if (spawnAtBeginning.Count <= 0) { howMany = "allegedly, though of dubious utility."; }
