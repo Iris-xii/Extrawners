@@ -39,6 +39,8 @@ public static class YamlFormat {
     public HexIndex? ForcedOrigin = null;
     public List<PuzzleModel.MoleculeM>? SpawnAtBeginning = null;
     public MODependency[]? SpawnOnOutput = null;
+    public List<int> InputsToRemove = new();
+    public List<int> OutputsToRemove = new();
 
     public record class MODependency {
       public int OutputGlyphIndex = -1;
@@ -87,6 +89,9 @@ public static class YamlFormat {
           fixDisjointMolecules: e.FixDisjointMolecules is bool b? b: false
         )
         (glyphData,puzzle,sol);
+      }
+      else if(e.Type == "RemoveIO") {
+        Presets.RemoveInputsAndOutputsOnlyDuringSolve(puzzle,e.InputsToRemove,e.OutputsToRemove);
       }
       else {
         throw new InvalidDataException($"{e.Type} matches no known preset.");

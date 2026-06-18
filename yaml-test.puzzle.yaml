@@ -1,0 +1,79 @@
+Name: YAML TEST
+ID: yaml-test
+Author: ''
+Inputs:
+- Molecule:
+    Atoms:
+    - AtomType: earth
+      Position:
+        Pos: 0,0
+    - AtomType: earth
+      Position:
+        Pos: -1,1
+    - AtomType: earth
+      Position:
+        Pos: 0,2
+    - AtomType: earth
+      Position:
+        Pos: -1,2
+    - AtomType: earth
+      Position:
+        Pos: 1,1
+    - AtomType: earth
+      Position:
+        Pos: 1,0
+    Bonds:
+    - A:
+        Pos: 0,0
+      B:
+        Pos: 1,0
+      BondTypes:
+      - standard
+    - A:
+        Pos: 1,0
+      B:
+        Pos: 1,1
+      BondTypes:
+      - standard
+    - A:
+        Pos: 0,2
+      B:
+        Pos: 1,1
+      BondTypes:
+      - standard
+    - A:
+        Pos: -1,2
+      B:
+        Pos: 0,2
+      BondTypes:
+      - standard
+    - A:
+        Pos: -1,1
+      B:
+        Pos: -1,2
+      BondTypes:
+      - standard
+    - A:
+        Pos: -1,1
+      B:
+        Pos: 0,0
+      BondTypes:
+      - standard
+    Name: ''
+  AmountOverride: 0
+- Molecule:
+    Atoms:
+    - AtomType: iron
+      Position:
+        Pos: 0,0
+    Bonds: []
+    Name: ''
+  AmountOverride: 0
+Outputs: []
+OutputMultiplier: 1
+PermissionFlags: Disposal, CoreTools
+CustomPermissions: []
+Highlights: []
+ProductionInfo: 
+Conduits: 
+Payloads: 

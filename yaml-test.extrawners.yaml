@@ -1,0 +1,221 @@
+- Type: "MultiOutput"
+  OkOutputs:
+    - Atoms:
+      - AtomType: salt
+        Position:
+          Pos: 0,0
+      Bonds: []
+    - Atoms:
+      - AtomType: water
+        Position:
+          Pos: 0,0
+      Bonds: []
+- Type: "MultiOutput"
+  SinkAny: true
+  WrongMolCrashesSim: true
+  OkOutputs:
+    - Atoms:
+      - AtomType: salt
+        Position:
+          Pos: 0,0
+      Bonds: []
+    - Atoms:
+      - AtomType: water
+        Position:
+          Pos: 0,0
+      Bonds: []
+- Type: "RandomInputRule"
+  DependentOutputs:
+    - OutputGlyphIndex: 0
+      OutputMoleculeIndex: 0
+      Molecules:
+        - Atoms:
+          - AtomType: salt
+            Position:
+              Pos: 0,0
+          Bonds: []
+    - OutputGlyphIndex: 0
+      OutputMoleculeIndex: 1
+      Molecules:
+        - Atoms:
+          - AtomType: water
+            Position:
+              Pos: 0,0
+          Bonds: [] 
+  RandomBag:
+    - Atoms:
+      - AtomType: salt
+        Position:
+          Pos: 0,0
+      - AtomType: salt
+        Position:
+          Pos: 1,0
+      Bonds:
+      - A:
+          Pos: 0,0
+        B:
+          Pos: 1,0
+        BondTypes:
+        - standard 
+    - Atoms:
+      - AtomType: water
+        Position:
+          Pos: 0,0
+      - AtomType: water
+        Position:
+          Pos: 1,0
+      Bonds:
+      - A:
+          Pos: 0,0
+        B:
+          Pos: 1,0
+        BondTypes:
+        - standard 
+- Type: "MultiOutput"
+  RequiredProducts: 0
+  OkOutputs:
+    - Atoms:
+      - AtomType: lead
+        Position:
+          Pos: 0,0
+      Bonds: []
+- Type: RandomInputRule
+  RandomBag:
+    - Atoms:
+      - AtomType: lead
+        Position:
+          Pos: 0,0
+      Bonds: []
+- Type: RandomInputRule
+  FixDisjointMolecules: true
+  DependentOutputs:
+    - OutputGlyphIndex: 6
+      OutputMoleculeIndex: 0
+      Molecules:
+        - Atoms:
+          - AtomType: air
+            Position:
+              Pos: 0,0
+          Bonds: []
+    - OutputGlyphIndex: 6
+      OutputMoleculeIndex: 0
+      Molecules:
+        - Atoms:
+          - AtomType: water
+            Position:
+              Pos: 0,0
+          Bonds: []
+    - OutputGlyphIndex: 6
+      OutputMoleculeIndex: 1
+      Molecules:
+        - Atoms:
+          - AtomType: fire
+            Position:
+              Pos: 0,0
+          Bonds: []
+    - OutputGlyphIndex: 6
+      OutputMoleculeIndex: 1
+      Molecules:
+        - Atoms:
+          - AtomType: salt
+            Position:
+              Pos: 0,0
+          Bonds: []
+  RandomBag:
+    - Atoms:
+      - AtomType: air
+        Position:
+          Pos: 0,0
+      - AtomType: water
+        Position:
+          Pos: 0,1
+      Bonds: []
+    - Atoms:
+      - AtomType: fire
+        Position:
+          Pos: 0,0
+      - AtomType: salt
+        Position:
+          Pos: 0,1
+      Bonds: []
+- Type: "MultiOutput"
+  OkOutputs:
+    - Atoms:
+      - AtomType: air
+        Position:
+          Pos: 0,0
+      Bonds: []
+    - Atoms:
+      - AtomType: water
+        Position:
+          Pos: 0,0
+      Bonds: []
+    - Atoms:
+      - AtomType: fire
+        Position:
+          Pos: 0,0
+      Bonds: []
+    - Atoms:
+      - AtomType: salt
+        Position:
+          Pos: 0,0
+      Bonds: []
+- Type: "Spawner"
+  SpawnAtBeginning:
+    - Atoms:
+      - AtomType: air
+        Position:
+          Pos: 0,0
+      Bonds: []
+- Type: "Spawner"
+  SpawnAtBeginning:
+    - Atoms:
+      - AtomType: water
+        Position:
+          Pos: 0,0
+      Bonds: []
+    - Atoms:
+      - AtomType: water
+        Position:
+          Pos: 0,0
+      Bonds: []
+- Type: "Spawner" 
+  SpawnAtBeginning:
+    - Atoms:
+      - AtomType: salt
+        Position:
+          Pos: 0,0
+      Bonds: []
+  SpawnOnOutput:
+    - OutputGlyphIndex: 6
+      OutputMoleculeIndex: 0
+      Molecules:
+        - Atoms:
+          - AtomType: salt
+            Position:
+              Pos: 0,0
+          Bonds: []
+    - OutputGlyphIndex: 6
+      OutputMoleculeIndex: 1
+      Molecules:
+        - Atoms:
+          - AtomType: salt
+            Position:
+              Pos: 0,0
+          Bonds: []
+    - OutputGlyphIndex: 6
+      OutputMoleculeIndex: 2
+      Molecules:
+        - Atoms:
+          - AtomType: fire
+            Position:
+              Pos: 0,0
+          Bonds: []
+    - OutputGlyphIndex: 6
+      OutputMoleculeIndex: 3
+      Molecules:
+        - Atoms:
+          - AtomType: salt
+            Position:
+              Pos: 0,0
+          Bonds: []
