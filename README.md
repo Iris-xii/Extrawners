@@ -1,5 +1,6 @@
 # Extrawners
 A mod that adds spawners that create atoms, or Extrawners, if you will.
+(It also adds computation like random inputs and multi-outputs, of course)
 
 ## Extransmissions Puzzles
 _Most_ extransmissions puzzles can be made into Extrawners puzzles just by replacing `extransmissions::rule` with `extrawners::rule`, with the exception of IORule, as it doesn't play nice with how Extrawners works.
