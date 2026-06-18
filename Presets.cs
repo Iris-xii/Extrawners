@@ -88,19 +88,26 @@ public static class Presets {
       puzzle.field_2771 = outputs;
     };
   }
+  //                      *--- Allow normal outputs this time too?
+  //                      v
+  // n inputs spawned per k outputs......
+  //  (with an additional c inputs at the beginning)
+  // Can be the same as the Catalyst preset too, but for a normal catalyst you just have the first c inputs and the rest is just n = 0 inputs per k outputs
 
   public static Preset MultiOutput(List<Molecule> okOutputs,
       bool sinkAny = false,
       bool wrongMolCrashesSim = false,
       int? mRequiredProducts = null,
-      string customName = "") {
+      string customName = "",
+      string customDesc = "",
+      HexIndex? forcedOrigin = null) {
     int requiredProducts = (int)(mRequiredProducts is null ? 6 : mRequiredProducts);
-    if (requiredProducts <= 0) { requiredProducts = 6; }
+    if (requiredProducts < 0) { requiredProducts = 6; }
     HexesAndBonds(okOutputs, out var hexes, out var sortaBonds);
     float molCountF = (float)okOutputs.Count;
     return (gd, puzzle, sol) => {
-      var nextGlyph = PushOrigin(gd);
-      SpawnerGlyph.partTypes[nextGlyph].SetDynState<Queue<Molecule>?>("dep", null);
+      var nextGlyph = PushOrigin(gd, forcedOrigin);
+      SpawnerGlyph.partTypes[nextGlyph].SetDynState<Queue<Molecule>?>("dep", null); //<- anything using partTyes.setState needs to be reset per puzzle
       gd.partTypeModify += (partTypes, sol) => {
         partTypes[nextGlyph].SetHexesToAllMols(okOutputs);
         string name = customName != "" ? customName
@@ -115,7 +122,7 @@ public static class Presets {
           descPartTwo = " It also accepts any molecule that may fit, but it will not count as progress towards the solution.";
         }
         partTypes[nextGlyph].SetName(name);
-        partTypes[nextGlyph].SetDescription($"{descPartOne}{descPartTwo}{descPartDependant}");
+        partTypes[nextGlyph].SetDescription(customDesc == "" ? $"{descPartOne}{descPartTwo}{descPartDependant}" : customDesc);
         partTypes[nextGlyph].SetAsOutput();
       };
       gd.partRenderer += (glyphIndex, part, pos, seb, renderer) => {
@@ -200,8 +207,11 @@ public static class Presets {
   }
 
   public static Preset RandomInputRule(List<Molecule> randomBag,
-      DependentOutput[]? dependentOutputs = null,
-      string customName = "") {
+      MultiOutputDependency[]? dependentOutputs = null,
+      string customName = "",
+      string customDesc = "",
+      HexIndex? forcedOrigin = null,
+      bool fixDisjointMolecules = false) {
     void WhenAddMolRaw(Molecule rawM) {
       int molIdx = -1;
       for (int i = 0; i < randomBag.Count; i++) {
@@ -213,9 +223,10 @@ public static class Presets {
       if (molIdx == -1) { throw new InvalidDataException("molIdx is -1"); }
       if (dependentOutputs is not null) {
         foreach (var depOutput in dependentOutputs) {
+          if (depOutput.outputMoleculeIndex != molIdx) { continue; }
           var q = SpawnerGlyph.partTypes[depOutput.outputGlyphIndex].GetDynStateOrNull<Queue<Molecule>>("dep");
           q ??= new();
-          foreach (var m in depOutput.molecules[molIdx]) {
+          foreach (var m in depOutput.molecules) {
             q.Enqueue(m);
           }
           SpawnerGlyph.partTypes[depOutput.outputGlyphIndex].SetDynState("dep", q);
@@ -226,13 +237,13 @@ public static class Presets {
     float molCountF = (float)randomBag.Count;
     HexesAndBonds(randomBag, out var hexes, out var sortaBonds);
     return (gd, puzzle, sol) => {
-      var nextGlyph = PushOrigin(gd);
+      var nextGlyph = PushOrigin(gd, forcedOrigin);
       gd.partTypeModify += (partTypes, sol) => {
         partTypes[nextGlyph].SetHexesToAllMols(randomBag);
         string maybeRandomInput = randomBag.Count > 1 ? "Random Input" : "Reagent";
         string maybeRandomDesc = randomBag.Count > 1 ? "This reagent may be one of several randomly chosen molecules." : "A reagent for the alchemical engine.";
         partTypes[nextGlyph].SetName(customName == "" ? maybeRandomInput : customName);
-        partTypes[nextGlyph].SetDescription(maybeRandomDesc);
+        partTypes[nextGlyph].SetDescription(customDesc == "" ? maybeRandomDesc : customDesc);
       };
       gd.partRenderer += (glyphIndex, part, pos, seb, renderer) => {
         var pss = PSS(seb, part);
@@ -278,6 +289,7 @@ public static class Presets {
                 var molecShifted = outMolecRaw.ShiftedBy(thisPart);
                 if (DoesNotOverlap(sim, thisPart, molecShifted)) {
                   sim.AddMolecule(molecShifted);
+                  if (fixDisjointMolecules) { Brimstone.API.ForceRecomputeBonds(molecShifted); }
                   WhenAddMolRaw(outMolecRaw);
                   pss.SetDynState<Molecule?>("cur", null);
                 }
@@ -303,6 +315,7 @@ public static class Presets {
             var molecShifted = outMolecRaw.ShiftedBy(thisPart);
             if (DoesNotOverlap(sim, thisPart, molecShifted)) {
               sim.AddMolecule(molecShifted);
+              if (fixDisjointMolecules) { Brimstone.API.ForceRecomputeBonds(molecShifted); }
               WhenAddMolRaw(outMolecRaw);
               pss.SetDynState<Molecule?>("cur", null);
             }
@@ -331,16 +344,25 @@ public static class Presets {
       };
     };
   }
-  public struct DependentOutput {
-    public int outputGlyphIndex;
-    public Molecule[][] molecules = new Molecule[0][];
+  public struct MultiOutputDependency {
+    public int outputGlyphIndex = 0;
+    public int outputMoleculeIndex = 0;
+    public Molecule[] molecules = new Molecule[0];
 
-    public DependentOutput() { outputGlyphIndex = -1; }
-    public DependentOutput(int idx) { outputGlyphIndex = idx; }
+    public MultiOutputDependency(int glyphIndex, int molIndex) { outputGlyphIndex = glyphIndex; outputMoleculeIndex = molIndex; }
   }
 
   private static int PushOrigin(GlyphData gd) {
     gd.origins.Add(new HexIndex(gd.origins.Count - (gd.origins.Count % 2 == 0 ? 0 : 4), gd.origins.Count + 1 * 5));
     return gd.origins.Count - 1;
+  }
+  private static int PushOrigin(GlyphData gd, HexIndex? optLocation) {
+    if (optLocation is not null) {
+      gd.origins.Add((HexIndex)optLocation);
+      return gd.origins.Count - 1;
+    }
+    else {
+      return PushOrigin(gd);
+    }
   }
 }

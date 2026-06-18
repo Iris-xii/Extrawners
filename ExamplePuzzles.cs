@@ -86,25 +86,14 @@ public sealed partial class ExtrawnersMod {
 
       Presets.Add("c248888215006990", new List<Presets.Preset>() {
         Presets.RandomInputRule(new() {salt,bisalt,fire,bifire}, customName: "Salt/Bisalt/Fire/Bifire",
-          dependentOutputs: new Presets.DependentOutput[] {
-            new() {outputGlyphIndex = 1, molecules = new Molecule[][] {
-              new Molecule[]{salt},
-              new Molecule[]{salt,salt},
-              new Molecule[]{fire},
-              new Molecule[]{fire,fire},
-            }}
+          dependentOutputs: new Presets.MultiOutputDependency[] {
+            new(1,0) {molecules = new Molecule[]{salt}},
+            new(1,1) {molecules = new Molecule[]{salt,salt}},
+            new(1,2) {molecules = new Molecule[]{fire}},
+            new(1,3) {molecules = new Molecule[]{fire,fire}},
           }),
         Presets.MultiOutput(new() {salt,fire},customName: "Elemental Salt / Elemental Fire")
-      });
-
-      Presets.Add("c994277786629428", new() {
-        Presets.RandomInputRule(new() {saltAndFire}, dependentOutputs: new Presets.DependentOutput[] {
-          new() {outputGlyphIndex = 1, molecules = new Molecule[][] {
-            new Molecule[]{salt,fire}
-          }}
-        }),
-        Presets.MultiOutput(new() {salt,fire})
-      });
+      }); 
 
       Presets.presetsTable.Add("c019087729916591", new() {
         Presets.RandomInputRule(new() {

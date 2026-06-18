@@ -28,18 +28,22 @@ public static class YamlFormat {
   internal record class PresetEntry {
     public string Type = "";
     public List<PuzzleModel.MoleculeM>? RandomBag = null;
-    public DependentOutput[]? DependentOutputs = null;
+    public MODependency[]? DependentOutputs = null;
     public List<PuzzleModel.MoleculeM>? OkOutputs = null;
     public bool? SinkAny = null;
     public bool? WrongMolCrashesSim = null;
     public int? RequiredProducts = null;
+    public bool? FixDisjointMolecules = null;
     public string CustomName = "";
+    public string CustomDesc = "";
+    public HexIndex? ForcedOrigin = null;
 
-    public record class DependentOutput {
+    public record class MODependency {
       public int OutputGlyphIndex = -1;
-      public PuzzleModel.MoleculeM[][]? Molecules = null;
-      public Presets.DependentOutput ToPresetForm() => new(OutputGlyphIndex) {
-        molecules = Molecules.Select(marr => marr.Select(m => m.FromModel()).ToArray()).ToArray(),
+      public int OutputMoleculeIndex = -1;
+      public PuzzleModel.MoleculeM[]? Molecules = null;
+      public Presets.MultiOutputDependency ToPresetForm() => new(OutputGlyphIndex,OutputMoleculeIndex) {
+        molecules = Molecules.Select(mm => mm.FromModel()).ToArray()
       };
     }
   }
@@ -49,13 +53,16 @@ public static class YamlFormat {
     foreach (var e in presetEntry) {
       Log($"Reading {e} from yaml...");
       if (e.Type == "RandomInputRule" || e.Type == "RandomInput") {
-        Presets.DependentOutput[]? maybeDepOutput = null;
-        if (e.DependentOutputs is PresetEntry.DependentOutput[] depOuts) {
+        Presets.MultiOutputDependency[]? maybeDepOutput = null;
+        if (e.DependentOutputs is PresetEntry.MODependency[] depOuts) {
           maybeDepOutput = depOuts.Select(dO => dO.ToPresetForm()).ToArray();
         }
         Presets.RandomInputRule(e.RandomBag.Select(mm => mm.FromModel()).ToList(),
           dependentOutputs: maybeDepOutput,
-          customName: e.CustomName)
+          customName: e.CustomName,
+          customDesc: e.CustomDesc,
+          forcedOrigin: e.ForcedOrigin,
+          fixDisjointMolecules: e.FixDisjointMolecules is bool b? b: false)
         (glyphData, puzzle, sol); // <- Don't forget this
       }
       else if (e.Type == "MultiOutput") {
@@ -63,7 +70,9 @@ public static class YamlFormat {
           sinkAny: e.SinkAny is bool sinkB ? sinkB : false,
           wrongMolCrashesSim: e.WrongMolCrashesSim is bool wrongB ? wrongB : false,
           mRequiredProducts: e.RequiredProducts,
-          customName: e.CustomName)
+          customName: e.CustomName,
+          customDesc: e.CustomDesc,
+          forcedOrigin: e.ForcedOrigin)
         (glyphData, puzzle, sol);
       }
       else {
