@@ -21,9 +21,10 @@ using static ExtrawnersMod;
 public static class Presets {
   public delegate void Preset(GlyphData gdToModify, Puzzle puzzle, Solution sol);
   public static Dictionary<string, List<Preset>> presetsTable = new();
+  internal static Dictionary<string, Pair<List<int>, List<int>>> removeTable = new();
 
-  public static void Add(Puzzle puzzle,List<Preset> presets) => presetsTable.Add(puzzle.PuzzleId(),presets);
-  public static void Add(string puzzleID,List<Preset> presets) => presetsTable.Add(puzzleID,presets);
+  public static void Add(Puzzle puzzle, List<Preset> presets) => presetsTable.Add(puzzle.PuzzleId(), presets);
+  public static void Add(string puzzleID, List<Preset> presets) => presetsTable.Add(puzzleID, presets);
 
   internal static GlyphData? LoadPresets(Puzzle puzzle, Solution sol, bool actualSolLoad) {
     List<int> inputsToRemove = new();
@@ -40,47 +41,66 @@ public static class Presets {
     else if (ExtransmissionsFormat.TryRead(puzzle, sol, out var extransmissionsGD, ref inputsToRemove, ref outputsToRemove, actualSolLoad)) {
       toReturn = extransmissionsGD;
     }
+    else if (YamlFormat.TryFindYaml(puzzle, out var glyphData, puzzle, sol)) {
+      toReturn = glyphData;
+    }
     //removal
     if (actualSolLoad && (inputsToRemove.Count != 0 || outputsToRemove.Count != 0)) {
-      PuzzleInputOutput[] inputs = puzzle.field_2770;
-      PuzzleInputOutput[] outputs = puzzle.field_2771;
-      List<PuzzleInputOutput> newInputs = new();
-      List<PuzzleInputOutput> newOutputs = new();
-      for (int i = 0; i < inputs.Length; i++) {
-        if (inputsToRemove.Contains(i)) {
-          Log($"Input #{i} will be removed.");
-          continue;
-        }
-        newInputs.Add(inputs[i]);
-      }
-      for (int i = 0; i < outputs.Length; i++) {
-        if (outputsToRemove.Contains(i)) {
-          Log($"Output #{i} will be removed.");
-          continue;
-        }
-        newOutputs.Add(outputs[i]);
-      }
-      puzzle.field_2770 = newInputs.ToArray();
-      puzzle.field_2771 = newOutputs.ToArray();
-      resetPuzzleIODeleteHack += () => {
-        puzzle.field_2770 = inputs;
-        puzzle.field_2771 = outputs;
-      };
+      RemoveInputsAndOutputsInternal(puzzle, inputsToRemove: inputsToRemove, outputsToRemove: outputsToRemove);
+    }
+    else if (actualSolLoad && removeTable.TryGetValue(puzzleId, out var data)) {
+      RemoveInputsAndOutputsInternal(puzzle, data.Left, data.Right);
     }
     //
     return toReturn;
   }
 
+  public static void RemoveInputsAndOutputsOnlyDuringSolve(Puzzle puzzle, List<int> inputsToRemove, List<int> outputsToRemove) {
+    removeTable.Add(puzzle.PuzzleId(), new Pair<List<int>, List<int>>(inputsToRemove, outputsToRemove));
+  }
+  public static void RemoveInputsAndOutputsOnlyDuringSolve(string puzzleId, List<int> inputsToRemove, List<int> outputsToRemove) {
+    removeTable.Add(puzzleId, new Pair<List<int>, List<int>>(inputsToRemove, outputsToRemove));
+  }
+
+  private static void RemoveInputsAndOutputsInternal(Puzzle puzzle, List<int> inputsToRemove, List<int> outputsToRemove) {
+    PuzzleInputOutput[] inputs = puzzle.field_2770;
+    PuzzleInputOutput[] outputs = puzzle.field_2771;
+    List<PuzzleInputOutput> newInputs = new();
+    List<PuzzleInputOutput> newOutputs = new();
+    for (int i = 0; i < inputs.Length; i++) {
+      if (inputsToRemove.Contains(i)) {
+        Log($"Input #{i} will be removed.");
+        continue;
+      }
+      newInputs.Add(inputs[i]);
+    }
+    for (int i = 0; i < outputs.Length; i++) {
+      if (outputsToRemove.Contains(i)) {
+        Log($"Output #{i} will be removed.");
+        continue;
+      }
+      newOutputs.Add(outputs[i]);
+    }
+    puzzle.field_2770 = newInputs.ToArray();
+    puzzle.field_2771 = newOutputs.ToArray();
+    resetPuzzleIODeleteHack += () => {
+      puzzle.field_2770 = inputs;
+      puzzle.field_2771 = outputs;
+    };
+  }
+
   public static Preset MultiOutput(List<Molecule> okOutputs,
       bool sinkAny = false,
       bool wrongMolCrashesSim = false,
-      int requiredProducts = 6,
+      int? mRequiredProducts = null,
       string customName = "") {
+    int requiredProducts = (int)(mRequiredProducts is null ? 6 : mRequiredProducts);
     if (requiredProducts <= 0) { requiredProducts = 6; }
     HexesAndBonds(okOutputs, out var hexes, out var sortaBonds);
     float molCountF = (float)okOutputs.Count;
     return (gd, puzzle, sol) => {
       var nextGlyph = PushOrigin(gd);
+      SpawnerGlyph.partTypes[nextGlyph].SetDynState<Queue<Molecule>?>("dep", null);
       gd.partTypeModify += (partTypes, sol) => {
         partTypes[nextGlyph].SetHexesToAllMols(okOutputs);
         string name = customName != "" ? customName
@@ -140,7 +160,7 @@ public static class Presets {
             AutoStatesReset(sim, thisPart, isOutput: true);
           }
           else if (when.FireGlyph()) {
-            ExtransmutationsCompat.OutputDoIchor(nextGlyph,thisPart,okOutputs,SpawnerGlyph.partTypes[nextGlyph].GetDynStateOrNull<Queue<Molecule>>("dep"));
+            ExtransmutationsCompat.OutputDoIchor(nextGlyph, thisPart, okOutputs, SpawnerGlyph.partTypes[nextGlyph].GetDynStateOrNull<Queue<Molecule>>("dep"));
             pss.GetDefaultDynState().isOutput = true;
             foreach (var rawM in okOutputs) {
               if (SpawnerGlyph.partTypes[nextGlyph].GetDynStateOrNull<Queue<Molecule>>("dep") is Queue<Molecule> q) {
@@ -162,7 +182,8 @@ public static class Presets {
             }
             foreach (var rawM in okOutputs) {
               if (sinkAny && SpawnerGlyph.ShouldAcceptMol(sim, rawM, pss, thisPart,
-                  out var acceptedWrong, molecMatchesFn: MolecMatchesSinkAny)) {
+                  out var acceptedWrong, molecMatchesFn: MolecMatchesSinkAny) && rawM.method_1100().Count > 0
+                  && acceptedWrong.method_1100().Count > 0) {
                 SpawnerGlyph.QueueMolAnimation(sim, acceptedWrong.SimCoordsToPart(thisPart), pss, thisPart);
                 sim.RemoveMolecule(acceptedWrong);
                 class_238.field_1991.field_1868.Play(seb);
@@ -209,7 +230,7 @@ public static class Presets {
       gd.partTypeModify += (partTypes, sol) => {
         partTypes[nextGlyph].SetHexesToAllMols(randomBag);
         string maybeRandomInput = randomBag.Count > 1 ? "Random Input" : "Reagent";
-        string maybeRandomDesc =  randomBag.Count > 1 ? "This reagent may be one of several randomly chosen molecules." : "A reagent for the alchemical engine.";
+        string maybeRandomDesc = randomBag.Count > 1 ? "This reagent may be one of several randomly chosen molecules." : "A reagent for the alchemical engine.";
         partTypes[nextGlyph].SetName(customName == "" ? maybeRandomInput : customName);
         partTypes[nextGlyph].SetDescription(maybeRandomDesc);
       };
@@ -228,7 +249,7 @@ public static class Presets {
         var seb = sim.SEB();
         foreach (var thisPart in sim.PartList().Where(p => p.Type() == SpawnerGlyph.partTypes[nextGlyph])) {
           var pss = PSS(seb, thisPart);
-          ExtransmutationsCompat.InputDoIchor(nextGlyph,thisPart,randomBag);
+          ExtransmutationsCompat.InputDoIchor(nextGlyph, thisPart, randomBag);
           if (when == LogicWhen.PRE_CYCLE) {
             AutoStatesReset(sim, thisPart, false);
             if (sim.Cycle() == 0) {

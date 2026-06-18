@@ -29,6 +29,8 @@ public sealed partial class ExtrawnersMod {
       var output0 = new Molecule().Atom("lead",0,0).Atom("lead",0,1).Atom("Extransmutations:ichor",1,1).Bond((enum_126)1,0,1,1,1).Bond((enum_126)1,0,0,0,1);
       var salt = new Molecule().Atom("salt",0,0);
       var fire = new Molecule().Atom("fire",0,0);
+      Presets.RemoveInputsAndOutputsOnlyDuringSolve("c456745873386569",
+        new(){},new(){0,1});
       Presets.Add("c456745873386569",new() {
         Presets.RandomInputRule(new() {input0}),
         Presets.RandomInputRule(new() {input1}),
@@ -116,19 +118,19 @@ public sealed partial class ExtrawnersMod {
           new Molecule().Atom("earth",-2,2).Atom("earth",-1,1).Atom("fire",0,0).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,-2,2,-1,1),
           new Molecule().Atom("earth",0,0).Atom("earth",-2,2).Atom("salt",-1,1).Atom("quicksilver",-3,2).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,-2,2,-1,1).Bond((enum_126)1,-3,2,-2,2),
           new Molecule().Atom("water",0,0).Atom("quicksilver",-1,1).Bond((enum_126)1,-1,1,0,0),
-        },requiredProducts: 16),
+        },mRequiredProducts: 16),
         Presets.MultiOutput(new() {
           new Molecule().Atom("iron",0,0).Atom("quicksilver",0,-1).Atom("quicksilver",-1,1).Atom("quicksilver",1,0).Bond((enum_126)1,0,-1,0,0).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,0,0,1,0),
           new Molecule().Atom("earth",-2,2).Atom("earth",-1,1).Atom("fire",0,0).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,-2,2,-1,1),
           new Molecule().Atom("earth",0,0).Atom("earth",-2,2).Atom("salt",-1,1).Atom("quicksilver",-3,2).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,-2,2,-1,1).Bond((enum_126)1,-3,2,-2,2),
           new Molecule().Atom("water",0,0).Atom("quicksilver",-1,1).Bond((enum_126)1,-1,1,0,0),
-        },requiredProducts: 16,sinkAny: true),
+        },mRequiredProducts: 16,sinkAny: true),
         Presets.MultiOutput(new() {
           new Molecule().Atom("iron",0,0).Atom("quicksilver",0,-1).Atom("quicksilver",-1,1).Atom("quicksilver",1,0).Bond((enum_126)1,0,-1,0,0).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,0,0,1,0),
           new Molecule().Atom("earth",-2,2).Atom("earth",-1,1).Atom("fire",0,0).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,-2,2,-1,1),
           new Molecule().Atom("earth",0,0).Atom("earth",-2,2).Atom("salt",-1,1).Atom("quicksilver",-3,2).Bond((enum_126)1,-1,1,0,0).Bond((enum_126)1,-2,2,-1,1).Bond((enum_126)1,-3,2,-2,2),
           new Molecule().Atom("water",0,0).Atom("quicksilver",-1,1).Bond((enum_126)1,-1,1,0,0),
-        },requiredProducts: 16,sinkAny: true, wrongMolCrashesSim: true),
+        },mRequiredProducts: 16,sinkAny: true, wrongMolCrashesSim: true),
       });
       m2 = m3;
       puzzleGlyphData.Add("disabled-c248888215006990", new() {

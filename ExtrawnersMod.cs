@@ -187,11 +187,11 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     PuzzleInputOutput[] pOutput = puzzle.field_2771;
     for (int i = 0; i < pInput.Length; i++) {
       Log($"input #{i} @{puzzle.PuzzleId()}:\n" +
-      $"var input{i} = new Molecule(){Dump(pInput[i].field_2813)};");
+      $"var input{i} = new Molecule(){Dump(pInput[i].field_2813)};\n");
     }
     for (int i = 0; i < pOutput.Length; i++) {
       Log($"output #{i} @{puzzle.PuzzleId()}:\n" +
-      $"var output{i} = new Molecule(){Dump(pOutput[i].field_2813)};");
+      $"var output{i} = new Molecule(){Dump(pOutput[i].field_2813)};\n");
     }
   }
 
