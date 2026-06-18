@@ -46,6 +46,8 @@ public sealed record class GlyphData {
 
   public delegate void LogicFn(Sim sim,LogicWhen when);
   public LogicFn logicFn = (_,_) => {};
+
+  internal Action<int,int,Sim> multiOutputSuccessfulOutputCallbacks = (_,_,_) => {}; 
  
 
   /*

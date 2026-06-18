@@ -30,6 +30,9 @@ public static class Resources {
   public static readonly Texture crimson_pipe_ring = class_235.method_615("textures/ioglyphs/crimson_pipe_ring");
   public static readonly Texture crimson_pipe_base = class_235.method_615("textures/ioglyphs/crimson_pipe_base");
   public static readonly Texture crimson_pipe_bond = class_235.method_615("textures/ioglyphs/crimson_pipe_bond");
+  public static readonly Texture spawner_pipe_ring = class_235.method_615("textures/ioglyphs/spawner_pipe_ring");
+  public static readonly Texture spawner_pipe_base = class_235.method_615("textures/ioglyphs/spawner_pipe_base");
+  public static readonly Texture spawner_pipe_bond = class_235.method_615("textures/ioglyphs/spawner_pipe_bond");
   internal static Texture[] genericBase = new Texture[] {
     class_235.method_615("textures/i_give_up/0"),
     class_235.method_615("textures/i_give_up/1"),

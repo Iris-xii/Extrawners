@@ -93,6 +93,116 @@ public static class Presets {
   // n inputs spawned per k outputs......
   //  (with an additional c inputs at the beginning)
   // Can be the same as the Catalyst preset too, but for a normal catalyst you just have the first c inputs and the rest is just n = 0 inputs per k outputs
+  public static Preset Spawner(
+      List<Molecule>? spawnAtBeginning = null,
+      MultiOutputDependency[]? spawnOnOutput = null,
+      string customName = "",
+      string customDesc = "",
+      HexIndex? forcedOrigin = null,
+      bool fixDisjointMolecules = false) {
+    spawnAtBeginning ??= new();
+    spawnOnOutput ??= new MultiOutputDependency[0];
+    var combined = spawnAtBeginning.Concat(spawnOnOutput.SelectMany(m => m.molecules)).ToList();
+    float molCountF = (float)combined.Count;
+    HexesAndBonds(combined, out var hexes, out var sortaBonds);
+    return (gd, puzzle, sol) => {
+      var nextGlyph = PushOrigin(gd, forcedOrigin);
+      gd.partTypeModify += (partTypes, sol) => {
+        string name = spawnOnOutput.Length == 0 ? "Catalyst" : "External Process";
+        string howMany = spawnAtBeginning.Count > 1 ? $"producing {spawnAtBeginning.Count} molecules to be used as a catalyst." : "producing a single molecule to be used as a catalyst.";
+        if (spawnAtBeginning.Count <= 0) { howMany = "allegedly, though of dubious utility."; }
+        string desc = spawnOnOutput.Length == 0 ? $"A catalyst for the transmutation engine, {howMany}"
+         : "An external process/synthesis connected to this transmutation engine, producing extra molecules on output.";
+        partTypes[nextGlyph].SetName(customName == "" ? name : customName);
+        partTypes[nextGlyph].SetDescription(customDesc == "" ? desc : customDesc);
+      };
+      gd.partRenderer += (glyphIndex, part, pos, seb, renderer) => {
+        var pss = PSS(seb, part);
+        if (glyphIndex == nextGlyph) {
+          SpawnerGlyph.DrawFullBaseFromHexesAndBonds(renderer, hexes, sortaBonds,
+            tbase: Resources.spawner_pipe_base,
+            ring: Resources.spawner_pipe_ring,
+            bond: Resources.spawner_pipe_bond);
+          if (combined.Count > 1) {
+            SpawnerGlyph.DrawMolAsIfInput(combined[(int)Math.Floor(seb.AccumulatedTime() % molCountF)],
+              seb, pss, pos, part);
+          }
+          else if (combined.Count == 1) {
+            SpawnerGlyph.DrawMolAsIfInput(combined[0],
+              seb, pss, pos, part);
+          }
+        }
+      };
+      gd.multiOutputSuccessfulOutputCallbacks += (int outputIdx, int moleculeIdx, Sim sim) => {
+        var seb = sim.SEB();
+        foreach (var thisPart in sim.PartList().Where(p => p.Type() == SpawnerGlyph.partTypes[nextGlyph])) {
+          var pss = PSS(seb, thisPart);
+          var queue = pss.GetDynStateOrDef<Queue<Molecule>>("molQueue");
+          bool queueChanged = false;
+          foreach (var soo in spawnOnOutput) {
+            if (soo.outputGlyphIndex != outputIdx) { continue; }
+            if (soo.outputMoleculeIndex != moleculeIdx) { continue; }
+            foreach (var mol in soo.molecules) {
+              queue.Enqueue(mol);
+              queueChanged = true;
+            }
+          }
+          if (queueChanged) {
+            pss.SetDynState<bool>("animatingOutPush", true);
+            SpawnerGlyph.QueueMolAnimation(sim, queue.Peek(), pss, thisPart);
+          }
+        }
+      };
+      gd.logicFn += (Sim sim, LogicWhen when) => {
+        var seb = sim.SEB();
+        foreach (var thisPart in sim.PartList().Where(p => p.Type() == SpawnerGlyph.partTypes[nextGlyph])) {
+          var pss = PSS(seb, thisPart);
+          ExtransmutationsCompat.InputDoIchor(nextGlyph, thisPart, combined);
+          if (when == LogicWhen.PRE_CYCLE) {
+            AutoStatesReset(sim, thisPart, false);
+            if (sim.Cycle() == 0) { pss.SetDynState<Queue<Molecule>>("molQueue", new(spawnAtBeginning)); }
+            if (sim.Cycle() == 0
+                && pss.GetDynStateOrDef<Queue<Molecule>>("molQueue") is Queue<Molecule> molQueue
+                && molQueue.Count > 0) {
+              var outMolecRaw = molQueue.Peek();
+              var molecShifted = outMolecRaw.ShiftedBy(thisPart);
+              if (DoesNotOverlap(sim, thisPart, molecShifted)) {
+                molQueue.Dequeue();
+                sim.AddMolecule(molecShifted);
+                if (fixDisjointMolecules) { Brimstone.API.ForceRecomputeBonds(molecShifted); }
+              }
+            }
+          }
+          else if (when.FireGlyph()) {
+            pss.GetDefaultDynState().animatingMolecule = null;
+            if (pss.GetDynStateOrDef<Queue<Molecule>>("molQueue") is Queue<Molecule> molQueue
+               && molQueue.Count > 0
+               && !pss.GetDynStateOrDef<bool>("animatingOutPush")) {
+              var outMolecRaw = molQueue.Peek();
+              var molecShifted = outMolecRaw.ShiftedBy(thisPart);
+              if (DoesNotOverlap(sim, thisPart, molecShifted)) {
+                molQueue.Dequeue();
+                sim.AddMolecule(molecShifted);
+                if (fixDisjointMolecules) { Brimstone.API.ForceRecomputeBonds(molecShifted); }
+              }
+            }
+            pss.SetDynState<bool>("animatingOutPush", false);
+          }
+          else if (when == LogicWhen.WELL_AFTER_CYCLE) {
+            if (pss.GetDynStateOrDef<Queue<Molecule>>("molQueue") is Queue<Molecule> molQueue
+                && molQueue.Count > 0) {
+              var outMolecRaw = molQueue.Peek();
+              var molecShifted = outMolecRaw.ShiftedBy(thisPart);
+              if (DoesNotOverlap(sim, thisPart, molecShifted)) {
+                SpawnerGlyph.QueueMolAnimation(sim, outMolecRaw, pss, thisPart);
+              }
+            }
+          }
+        }
+      };
+    };
+  }
+
 
   public static Preset MultiOutput(List<Molecule> okOutputs,
       bool sinkAny = false,
@@ -179,6 +289,15 @@ public static class Presets {
                   out var accepted, molecMatchesFn: null)) {
                 SpawnerGlyph.QueueMolAnimation(sim, rawM, pss, thisPart);
                 sim.RemoveMolecule(accepted);
+                int molIndex = -1; // <- for spawner
+                for (int i = 0; i < okOutputs.Count; i++) {
+                  var item = okOutputs[i];
+                  if (molecMatchesExact(item, rawM)) {
+                    molIndex = i;
+                    break;
+                  }
+                }
+                gd.multiOutputSuccessfulOutputCallbacks(nextGlyph, molIndex, sim); // <- for spawner
                 if (SpawnerGlyph.partTypes[nextGlyph].GetDynStateOrNull<Queue<Molecule>>("dep") is Queue<Molecule> q2) {
                   q2.Dequeue();
                 }

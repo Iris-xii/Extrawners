@@ -37,6 +37,8 @@ public static class YamlFormat {
     public string CustomName = "";
     public string CustomDesc = "";
     public HexIndex? ForcedOrigin = null;
+    public List<PuzzleModel.MoleculeM>? SpawnAtBeginning = null;
+    public MODependency[]? SpawnOnOutput = null;
 
     public record class MODependency {
       public int OutputGlyphIndex = -1;
@@ -74,6 +76,17 @@ public static class YamlFormat {
           customDesc: e.CustomDesc,
           forcedOrigin: e.ForcedOrigin)
         (glyphData, puzzle, sol);
+      }
+      else if(e.Type == "Spawner") {
+        Presets.Spawner(
+          spawnAtBeginning: e.SpawnAtBeginning?.Select(e=>e.FromModel()).ToList(),
+          spawnOnOutput: e.SpawnOnOutput?.Select(m => m.ToPresetForm()).ToArray(),
+          customName: e.CustomName,
+          customDesc: e.CustomDesc,
+          forcedOrigin: e.ForcedOrigin,
+          fixDisjointMolecules: e.FixDisjointMolecules is bool b? b: false
+        )
+        (glyphData,puzzle,sol);
       }
       else {
         throw new InvalidDataException($"{e.Type} matches no known preset.");
