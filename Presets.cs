@@ -2,6 +2,7 @@ using Quintessential;
 using MonoMod.RuntimeDetour;
 using MonoMod.Cil;
 using Quintessential.Serialization;
+using System.Collections.Generic;
 
 namespace Extrawners;
 
@@ -88,6 +89,11 @@ public static class Presets {
       puzzle.field_2771 = outputs;
     };
   }
+
+  private struct FuckingComparer : IEqualityComparer<Molecule> {//I can't get Distinct to just take a lambda >:(
+    public readonly bool Equals(Molecule x, Molecule y) => molecMatchesExact(x,y); 
+    public readonly int GetHashCode(Molecule obj) => obj.GetHashCode();
+  }
   //                      *--- Allow normal outputs this time too?
   //                      v
   // n inputs spawned per k outputs......
@@ -103,7 +109,8 @@ public static class Presets {
     spawnAtBeginning ??= new();
     spawnOnOutput ??= new MultiOutputDependency[0];
     var combined = spawnAtBeginning.Concat(spawnOnOutput.SelectMany(m => m.molecules)).ToList();
-    float molCountF = (float)combined.Count;
+    var combinedDeduplicated = combined.Distinct(new FuckingComparer()).ToList();
+    float molCountF = (float)combinedDeduplicated.Count;
     HexesAndBonds(combined, out var hexes, out var sortaBonds);
     return (gd, puzzle, sol) => {
       var nextGlyph = PushOrigin(gd, forcedOrigin);
@@ -123,12 +130,12 @@ public static class Presets {
             tbase: Resources.spawner_pipe_base,
             ring: Resources.spawner_pipe_ring,
             bond: Resources.spawner_pipe_bond);
-          if (combined.Count > 1) {
-            SpawnerGlyph.DrawMolAsIfInput(combined[(int)Math.Floor(seb.AccumulatedTime() % molCountF)],
+          if (combinedDeduplicated.Count > 1) {
+            SpawnerGlyph.DrawMolAsIfInput(combinedDeduplicated[(int)Math.Floor(seb.AccumulatedTime() % molCountF)],
               seb, pss, pos, part);
           }
-          else if (combined.Count == 1) {
-            SpawnerGlyph.DrawMolAsIfInput(combined[0],
+          else if (combinedDeduplicated.Count == 1) {
+            SpawnerGlyph.DrawMolAsIfInput(combinedDeduplicated[0],
               seb, pss, pos, part);
           }
         }
