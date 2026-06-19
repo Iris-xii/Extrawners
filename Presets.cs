@@ -338,7 +338,11 @@ public static class Presets {
       string customName = "",
       string customDesc = "",
       HexIndex? forcedOrigin = null,
-      bool fixDisjointMolecules = false) {
+      bool fixDisjointMolecules = false,
+      bool disableRng = false) {
+    int Rng(Random rng,int bagCount) {
+      return disableRng == false ? rng.Next(0, bagCount) : 0;
+    }
     void WhenAddMolRaw(Molecule rawM) {
       int molIdx = -1;
       for (int i = 0; i < randomBag.Count; i++) {
@@ -407,7 +411,7 @@ public static class Presets {
                   pss.SetDynState("curBag", bag);
                 }
                 if (cur is null) {
-                  var i = rng.Next(0, bag.Count);
+                  var i = Rng(rng,bag.Count);
                   cur = bag[i];
                   bag.RemoveAt(i);
                   pss.SetDynState("cur", cur);
@@ -433,7 +437,7 @@ public static class Presets {
               pss.SetDynState("curBag", bag);
             }
             if (cur is null) {
-              var i = rng.Next(0, bag.Count);
+              var i = Rng(rng,bag.Count);
               cur = bag[i];
               bag.RemoveAt(i);
               pss.SetDynState("cur", cur);
@@ -456,7 +460,7 @@ public static class Presets {
               pss.SetDynState("curBag", bag);
             }
             if (cur is null) {
-              var i = rng.Next(0, bag.Count);
+              var i = Rng(rng,bag.Count);
               cur = bag[i];
               bag.RemoveAt(i);
               pss.SetDynState("cur", cur);

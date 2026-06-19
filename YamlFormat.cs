@@ -41,12 +41,13 @@ public static class YamlFormat {
     public MODependency[]? SpawnOnOutput = null;
     public List<int> InputsToRemove = new();
     public List<int> OutputsToRemove = new();
+    public bool? DisableRng = null;
 
     public record class MODependency {
       public int OutputGlyphIndex = -1;
       public int OutputMoleculeIndex = -1;
       public PuzzleModel.MoleculeM[]? Molecules = null;
-      public Presets.MultiOutputDependency ToPresetForm() => new(OutputGlyphIndex,OutputMoleculeIndex) {
+      public Presets.MultiOutputDependency ToPresetForm() => new(OutputGlyphIndex, OutputMoleculeIndex) {
         molecules = Molecules.Select(mm => mm.FromModel()).ToArray()
       };
     }
@@ -66,7 +67,8 @@ public static class YamlFormat {
           customName: e.CustomName,
           customDesc: e.CustomDesc,
           forcedOrigin: e.ForcedOrigin,
-          fixDisjointMolecules: e.FixDisjointMolecules is bool b? b: false)
+          fixDisjointMolecules: e.FixDisjointMolecules is bool fdm ? fdm : false,
+          disableRng: e.DisableRng is bool drng ? drng : false)
         (glyphData, puzzle, sol); // <- Don't forget this
       }
       else if (e.Type == "MultiOutput") {
@@ -79,19 +81,19 @@ public static class YamlFormat {
           forcedOrigin: e.ForcedOrigin)
         (glyphData, puzzle, sol);
       }
-      else if(e.Type == "Spawner") {
+      else if (e.Type == "Spawner") {
         Presets.Spawner(
-          spawnAtBeginning: e.SpawnAtBeginning?.Select(e=>e.FromModel()).ToList(),
+          spawnAtBeginning: e.SpawnAtBeginning?.Select(e => e.FromModel()).ToList(),
           spawnOnOutput: e.SpawnOnOutput?.Select(m => m.ToPresetForm()).ToArray(),
           customName: e.CustomName,
           customDesc: e.CustomDesc,
           forcedOrigin: e.ForcedOrigin,
-          fixDisjointMolecules: e.FixDisjointMolecules is bool b? b: false
+          fixDisjointMolecules: e.FixDisjointMolecules is bool b ? b : false
         )
-        (glyphData,puzzle,sol);
+        (glyphData, puzzle, sol);
       }
-      else if(e.Type == "RemoveIO") {
-        Presets.RemoveInputsAndOutputsOnlyDuringSolve(puzzle,e.InputsToRemove,e.OutputsToRemove);
+      else if (e.Type == "RemoveIO") {
+        Presets.RemoveInputsAndOutputsOnlyDuringSolve(puzzle, e.InputsToRemove, e.OutputsToRemove);
       }
       else {
         throw new InvalidDataException($"{e.Type} matches no known preset.");
