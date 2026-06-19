@@ -346,7 +346,7 @@ public static class Presets {
     void WhenAddMolRaw(Molecule rawM) {
       int molIdx = -1;
       for (int i = 0; i < randomBag.Count; i++) {
-        if (molecMatchesExact(rawM, randomBag[i])) {
+        if (rawM == randomBag[i]) {
           molIdx = i;
           break;
         }
