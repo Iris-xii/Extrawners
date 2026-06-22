@@ -78,6 +78,7 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     hook_Sim_method_1836 = new Hook(typeof(Sim).GetMethod("method_1836", BF.NonPublic | BF.Instance), OnSimMethod_1836_WellAfterCycle);
 
     hook_method_947 = new Hook(typeof(GameLogic).GetMethod("method_947", BF.Public | BF.Instance), OnScreenTransitionAway);
+    hook_method_949 = new Hook(typeof(GameLogic).GetMethod("method_949", BF.Public | BF.Instance), OnScreenTransitionAway2);
     DoExamplePuzzles();
   }
 
@@ -92,6 +93,8 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     hook_sim_method_1825 = null;
     hook_method_947.Dispose();
     hook_method_947 = null;
+    hook_method_949.Dispose();
+    hook_method_949 = null;
   }
 
   public Hook hookApplyChanges = null;
@@ -170,6 +173,13 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     GameLogic gl, Maybe<class_124> param_4618, Maybe<class_124> param_4619) {
     resetPuzzleIODeleteHack();
     orig(gl, param_4618, param_4619);
+  }
+
+  
+  public Hook hook_method_949;
+  public static void OnScreenTransitionAway2(Action<GameLogic> orig,GameLogic gl) {
+    resetPuzzleIODeleteHack();
+    orig(gl);
   }
 
 
