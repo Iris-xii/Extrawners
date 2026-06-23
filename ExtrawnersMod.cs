@@ -79,7 +79,7 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
 
     hook_method_947 = new Hook(typeof(GameLogic).GetMethod("method_947", BF.Public | BF.Instance), OnScreenTransitionAway);
     hook_method_949 = new Hook(typeof(GameLogic).GetMethod("method_949", BF.Public | BF.Instance), OnScreenTransitionAway2);
-    DoExamplePuzzles();
+    //DoExamplePuzzles();
   }
 
   public override void Unload() {

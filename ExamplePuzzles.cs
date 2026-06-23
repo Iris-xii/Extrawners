@@ -40,9 +40,9 @@ public sealed partial class ExtrawnersMod {
     }
     {
       var m0 = new Molecule()
-        .Atom("extransmutations:ichor", 0, 0)
-        .Atom("extransmutations:ichor", 1, 0)
-        .Atom("extransmutations:ichor", 2, 0)
+        .Atom("water", 0, 0)
+        .Atom("water", 1, 0)
+        .Atom("water", 2, 0)
         .Bond(BondKinds.normal, 1, 0, 2, 0);
       var m1 = new Molecule()
         .Atom("salt", 0, 0)
