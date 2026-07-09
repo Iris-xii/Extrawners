@@ -110,7 +110,7 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
       .Where(a => a.Key == puzzleId)
       .Select(a => a.Value)
       .FirstOrDefault();
-    maybeGlyphData ??= Presets.LoadPresets(puzzle, solution,actualSolLoad: false);
+    maybeGlyphData ??= Presets.LoadPresets(puzzle, solution, actualSolLoad: false);
     if (maybeGlyphData is GlyphData glyphData) {
       if (glyphData.origins.Count > SpawnerGlyph.MAX_SPAWNERS) {
         throw new ArgumentOutOfRangeException($"Only {SpawnerGlyph.MAX_SPAWNERS} max spawner glyphs are allowed at a time. Bug me (Iris) to increase this if you need more.");
@@ -175,9 +175,9 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     orig(gl, param_4618, param_4619);
   }
 
-  
+
   public Hook hook_method_949;
-  public static void OnScreenTransitionAway2(Action<GameLogic> orig,GameLogic gl) {
+  public static void OnScreenTransitionAway2(Action<GameLogic> orig, GameLogic gl) {
     resetPuzzleIODeleteHack();
     orig(gl);
   }
@@ -233,17 +233,22 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
   }
 
   public Hook hook_sim_method_1825;
+
+#pragma warning disable CS0618 // Type or member is obsolete
   private static bool OnSimMethod1825(On.Sim.orig_method_1825 orig, Sim s) {
     foreach (var part in s.PartList().Where(p => SpawnerGlyph.partTypes.Contains(p.Type()))) {
       var pss = PSS(s.SEB(), part);
       var state = pss.GetDefaultDynState();
       var partType = part.Type();
+      //Log($"id: {partType.field_1528}, state.isOutput: {state.isOutput}, partType.GetDynStateOrDef<bool>(\"output\") {partType.GetDynStateOrDef<bool>("output")}, "
+      //+$"pss.CurrentOutputs() {pss.CurrentOutputs()}, part.GetRequiredOutputs() {part.GetRequiredOutputs()}, < : {(pss.CurrentOutputs() < part.GetRequiredOutputs())}");
       if ((state.isOutput || partType.GetDynStateOrDef<bool>("output")) && (pss.CurrentOutputs() < part.GetRequiredOutputs())) {
         return false;
       }
     }
     return orig(s);
   }
+#pragma warning restore CS0618
 
 
 

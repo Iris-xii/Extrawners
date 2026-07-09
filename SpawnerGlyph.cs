@@ -317,10 +317,14 @@ public static class SpawnerGlyph {
     partTypes = partTypesList.ToArray();
   }
 
+#pragma warning disable CS0618 // Type or member is obsolete
   internal static void Cleanup() {
     for (int i = 0; i < MAX_SPAWNERS; i++) {
       SpawnerPartTypeReset(i, partTypes[i]);
+      partTypes[i].SetDynState("output", false); //<- anything using partTyes.setState needs to be reset per puzzle
+
     }
   }
+#pragma warning restore CS0618 // Type or member is obsolete
 
 }

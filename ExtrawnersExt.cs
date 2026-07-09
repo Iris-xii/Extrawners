@@ -81,6 +81,7 @@ public static class ExtrawnersExt {
   public static void SetDescription(this PartType t, string desc) =>
     t.field_1530 = class_134.method_253(desc, string.Empty);
 
+  [Obsolete]
   public static void SetAsOutput(this PartType t) => t.SetDynState<bool>("output", true);
 
 
@@ -166,6 +167,7 @@ public static class ExtrawnersExt {
     }
     return state;
   }
+  [Obsolete("DynState with PartType is too easy to get wrong")]
   public static T GetDynStateOrDef<T>(this PartType pt, string entry) where T : new() {
     DynamicData dyn_pss = new(pt);
     object? maybeState = dyn_pss.Get(entry);
@@ -179,6 +181,7 @@ public static class ExtrawnersExt {
     }
     return state;
   }
+  [Obsolete("DynState with PartType is too easy to get wrong")]
   public static T? GetDynStateOrNull<T>(this PartType pt, string entry) where T : class? {
     DynamicData dyn_pss = new(pt);
     object? maybeState = dyn_pss.Get(entry);
@@ -207,6 +210,7 @@ public static class ExtrawnersExt {
     DynamicData dyn_pss = new(pss);
     dyn_pss.Set(entry, to);
   }
+  [Obsolete("DynState with PartType is too easy to get wrong")]
   public static void SetDynState<T>(this PartType pt, string entry, T to) {
     DynamicData dyn_pss = new(pt);
     dyn_pss.Set(entry, to);

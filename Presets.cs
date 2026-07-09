@@ -91,7 +91,7 @@ public static class Presets {
   }
 
   private struct FuckingComparer : IEqualityComparer<Molecule> {//I can't get Distinct to just take a lambda >:(
-    public readonly bool Equals(Molecule x, Molecule y) => molecMatchesExact(x,y); 
+    public readonly bool Equals(Molecule x, Molecule y) => molecMatchesExact(x, y);
     public readonly int GetHashCode(Molecule obj) => obj.GetHashCode();
   }
   //                      *--- Allow normal outputs this time too?
@@ -212,6 +212,7 @@ public static class Presets {
   }
 
 
+#pragma warning disable CS0618 // Type or member is obsolete
   public static Preset MultiOutput(List<Molecule> okOutputs,
       bool sinkAny = false,
       bool wrongMolCrashesSim = false,
@@ -226,6 +227,7 @@ public static class Presets {
     return (gd, puzzle, sol) => {
       var nextGlyph = PushOrigin(gd, forcedOrigin);
       SpawnerGlyph.partTypes[nextGlyph].SetDynState<Queue<Molecule>?>("dep", null); //<- anything using partTyes.setState needs to be reset per puzzle
+
       gd.partTypeModify += (partTypes, sol) => {
         partTypes[nextGlyph].SetHexesToAllMols(okOutputs);
         string name = customName != "" ? customName
@@ -241,7 +243,7 @@ public static class Presets {
         }
         partTypes[nextGlyph].SetName(name);
         partTypes[nextGlyph].SetDescription(customDesc == "" ? $"{descPartOne}{descPartTwo}{descPartDependant}" : customDesc);
-        partTypes[nextGlyph].SetAsOutput();
+        partTypes[nextGlyph].SetDynState<bool>("output", true);
       };
       gd.partRenderer += (glyphIndex, part, pos, seb, renderer) => {
         var pss = PSS(seb, part);
@@ -340,7 +342,7 @@ public static class Presets {
       HexIndex? forcedOrigin = null,
       bool fixDisjointMolecules = false,
       bool disableRng = false) {
-    int Rng(Random rng,int bagCount) {
+    int Rng(Random rng, int bagCount) {
       return disableRng == false ? rng.Next(0, bagCount) : 0;
     }
     void WhenAddMolRaw(Molecule rawM) {
@@ -411,7 +413,7 @@ public static class Presets {
                   pss.SetDynState("curBag", bag);
                 }
                 if (cur is null) {
-                  var i = Rng(rng,bag.Count);
+                  var i = Rng(rng, bag.Count);
                   cur = bag[i];
                   bag.RemoveAt(i);
                   pss.SetDynState("cur", cur);
@@ -437,7 +439,7 @@ public static class Presets {
               pss.SetDynState("curBag", bag);
             }
             if (cur is null) {
-              var i = Rng(rng,bag.Count);
+              var i = Rng(rng, bag.Count);
               cur = bag[i];
               bag.RemoveAt(i);
               pss.SetDynState("cur", cur);
@@ -460,7 +462,7 @@ public static class Presets {
               pss.SetDynState("curBag", bag);
             }
             if (cur is null) {
-              var i = Rng(rng,bag.Count);
+              var i = Rng(rng, bag.Count);
               cur = bag[i];
               bag.RemoveAt(i);
               pss.SetDynState("cur", cur);
@@ -475,6 +477,8 @@ public static class Presets {
       };
     };
   }
+
+#pragma warning restore CS0618 // Type or member is obsolete
   public struct MultiOutputDependency {
     public int outputGlyphIndex = 0;
     public int outputMoleculeIndex = 0;
