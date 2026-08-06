@@ -51,6 +51,7 @@ public static class ExtransmissionsFormat {
   public static bool TryRead(Puzzle puzzle, Solution sol, out GlyphData glyphData, ref List<int> inputsToRemove, ref List<int> outputsToRemove, bool actualSolLoad) {
     glyphData = new();
     bool any = false;
+    if(puzzle.CustomPermissions is null) return false;
     foreach (var customPerm in puzzle.CustomPermissions) {
       ReadCustomPermissionString(customPerm, glyphData, puzzle, sol, setTrueIfAlteredGd: ref any, inputsToRemove, outputsToRemove);
     }
