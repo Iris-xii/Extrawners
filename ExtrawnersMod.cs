@@ -170,15 +170,20 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
 
   public Hook hook_method_947;
   private static void OnScreenTransitionAway(Action<GameLogic, Maybe<class_124>, Maybe<class_124>> orig,
-    GameLogic gl, Maybe<class_124> param_4618, Maybe<class_124> param_4619) {
+    GameLogic gl, Maybe<class_124> param_4618, Maybe<class_124> param_4619) { 
     resetPuzzleIODeleteHack();
     orig(gl, param_4618, param_4619);
   }
 
 
   public Hook hook_method_949;
-  public static void OnScreenTransitionAway2(Action<GameLogic> orig, GameLogic gl) {
-    resetPuzzleIODeleteHack();
+  public static void OnScreenTransitionAway2(Action<GameLogic> orig, GameLogic gl) { 
+    class_197<IScreen> stack = (class_197<IScreen>)typeof(GameLogic).GetField("field_2454",BF.NonPublic|BF.Instance).GetValue(gl);
+    //Log($"Transition A {stack.field_1808[stack.field_1808.Count-1]}");
+    if(stack.field_1808[stack.field_1808.Count-1] is class_257) {}
+    else {
+      resetPuzzleIODeleteHack();
+    }
     orig(gl);
   }
 
