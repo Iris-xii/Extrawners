@@ -42,6 +42,7 @@ public static class YamlFormat {
     public List<int> InputsToRemove = new();
     public List<int> OutputsToRemove = new();
     public bool? DisableRng = null;
+    public bool OkOutputsIsSequence = false;
 
     public record class MODependency {
       public int OutputGlyphIndex = -1;
@@ -78,7 +79,8 @@ public static class YamlFormat {
           mRequiredProducts: e.RequiredProducts,
           customName: e.CustomName,
           customDesc: e.CustomDesc,
-          forcedOrigin: e.ForcedOrigin)
+          forcedOrigin: e.ForcedOrigin,
+          okOutputsIsSequence: e.OkOutputsIsSequence)
         (glyphData, puzzle, sol);
       }
       else if (e.Type == "Spawner") {

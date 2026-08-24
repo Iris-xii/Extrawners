@@ -219,7 +219,8 @@ public static class Presets {
       int? mRequiredProducts = null,
       string customName = "",
       string customDesc = "",
-      HexIndex? forcedOrigin = null) {
+      HexIndex? forcedOrigin = null,
+      bool okOutputsIsSequence = false) {
     int requiredProducts = (int)(mRequiredProducts is null ? 6 : mRequiredProducts);
     if (requiredProducts < 0) { requiredProducts = 6; }
     HexesAndBonds(okOutputs, out var hexes, out var sortaBonds);
@@ -227,6 +228,7 @@ public static class Presets {
     return (gd, puzzle, sol) => {
       var nextGlyph = PushOrigin(gd, forcedOrigin);
       SpawnerGlyph.partTypes[nextGlyph].SetDynState<Queue<Molecule>?>("dep", null); //<- anything using partTyes.setState needs to be reset per puzzle
+      SpawnerGlyph.partTypes[nextGlyph].SetDynState<int>("seq", 0); //<- anything using partTyes.setState needs to be reset per puzzle
 
       gd.partTypeModify += (partTypes, sol) => {
         partTypes[nextGlyph].SetHexesToAllMols(okOutputs);
@@ -270,6 +272,11 @@ public static class Presets {
                 seb, pss, renderer, pos, part);
             }
           }
+          else if(okOutputsIsSequence) {
+            var idx = SpawnerGlyph.partTypes[nextGlyph].GetDynStateOrDef<int>("seq");
+              SpawnerGlyph.DrawMolAsIfOutput(okOutputs[idx % okOutputs.Count],
+                seb, pss, renderer, pos, part);
+          }
           else {
             SpawnerGlyph.DrawMolAsIfOutput(okOutputs[(int)Math.Floor(seb.AccumulatedTime() % molCountF)],
               seb, pss, renderer, pos, part);
@@ -282,6 +289,7 @@ public static class Presets {
           var pss = PSS(seb, thisPart);
           if (when == LogicWhen.PRE_CYCLE && sim.Cycle() == 0) {
             thisPart.SetRequiredOutputs(requiredProducts);
+            if (okOutputsIsSequence) { SpawnerGlyph.partTypes[nextGlyph].SetDynState<int>("seq", 0); }
           }
           else if (when == LogicWhen.PRE_CYCLE) {
             AutoStatesReset(sim, thisPart, isOutput: true);
@@ -289,7 +297,14 @@ public static class Presets {
           else if (when.FireGlyph()) {
             ExtransmutationsCompat.OutputDoIchor(nextGlyph, thisPart, okOutputs, SpawnerGlyph.partTypes[nextGlyph].GetDynStateOrNull<Queue<Molecule>>("dep"));
             pss.GetDefaultDynState().isOutput = true;
-            foreach (var rawM in okOutputs) {
+            var okOutputsMaybeModified = okOutputs;
+            var curSeq = SpawnerGlyph.partTypes[nextGlyph].GetDynStateOrDef<int>("seq");
+            if (okOutputsIsSequence) {
+              okOutputsMaybeModified = new() {
+                okOutputs[curSeq % okOutputs.Count]
+              };
+            }
+            foreach (var rawM in okOutputsMaybeModified) {
               if (SpawnerGlyph.partTypes[nextGlyph].GetDynStateOrNull<Queue<Molecule>>("dep") is Queue<Molecule> q) {
                 if (!molecMatchesExact(q.Peek(), rawM)) {
                   continue;
@@ -299,9 +314,10 @@ public static class Presets {
                   out var accepted, molecMatchesFn: null)) {
                 SpawnerGlyph.QueueMolAnimation(sim, rawM, pss, thisPart);
                 sim.RemoveMolecule(accepted);
+                if (okOutputsIsSequence) { SpawnerGlyph.partTypes[nextGlyph].SetDynState<int>("seq", curSeq + 1); }
                 int molIndex = -1; // <- for spawner
-                for (int i = 0; i < okOutputs.Count; i++) {
-                  var item = okOutputs[i];
+                for (int i = 0; i < okOutputsMaybeModified.Count; i++) {
+                  var item = okOutputsMaybeModified[i];
                   if (molecMatchesExact(item, rawM)) {
                     molIndex = i;
                     break;
@@ -316,7 +332,7 @@ public static class Presets {
                 break;
               }
             }
-            foreach (var rawM in okOutputs) {
+            foreach (var rawM in okOutputsMaybeModified) {
               if (sinkAny && SpawnerGlyph.ShouldAcceptMol(sim, rawM, pss, thisPart,
                   out var acceptedWrong, molecMatchesFn: MolecMatchesSinkAny) && rawM.method_1100().Count > 0
                   && acceptedWrong.method_1100().Count > 0) {
