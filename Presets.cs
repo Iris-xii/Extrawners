@@ -197,7 +197,7 @@ internal static class Presets {
     }
     if (dependentOutputs is not null) puzzleData.multiOutputDependencyTemp[glyph.partTypesIndex] = dependentOutputs;
   }
-
+/*
 
   //                      *--- Allow normal outputs this time too?
   //                      v
@@ -578,5 +578,5 @@ internal static class Presets {
   }
 
 #pragma warning restore CS0618 // Type or member is obsolete
-
+/**/
 }

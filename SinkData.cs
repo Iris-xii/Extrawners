@@ -39,7 +39,7 @@ internal sealed record SinkData() {
   internal List<Molecule> crashMolecules = new();
   internal List<Molecule> sequencedProgressMolecules = new(); // <- suspiciously specific
   internal SinkEffect.K resultWhenFitButNoMatch = SinkEffect.K.IGNORE;
-  
+
   internal SinkEffect TrySink(Molecule candidateSim,
       IEnumerable<HexIndex> holeHexes,
       Sim sim,

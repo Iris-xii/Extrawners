@@ -22,6 +22,7 @@ using static ExtrawnersExt;
 
 #pragma warning disable CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
 //dotnet build;rm Extrawners.dll;cp bin/Debug/net4.5.2/Extrawners.dll ./
+#nullable disable
 public sealed partial class ExtrawnersMod : QuintessentialMod {
   [SettingsLabel("Print Molecules to log on level load?")]
   internal static bool printMoleculesOnLoad = true; 
