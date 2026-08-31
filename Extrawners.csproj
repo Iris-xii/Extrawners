@@ -4,6 +4,7 @@
     <TargetFramework>net4.5.2</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>10.0</LangVersion>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
  
     <ItemGroup>

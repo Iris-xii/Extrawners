@@ -20,30 +20,27 @@ using static ExtrawnersMod;
 
 #nullable enable
 public static class Presets {
-  public delegate void Preset(GlyphData gdToModify, Puzzle puzzle, Solution sol);
-  public static Dictionary<string, List<Preset>> presetsTable = new();
+  internal delegate void Preset(ExPuzzleData puzzleData, Puzzle puzzle, Solution sol);
+  internal static Dictionary<string, List<Preset>> presetsTable = new();
   internal static Dictionary<string, Pair<List<int>, List<int>>> removeTable = new();
 
-  public static void Add(Puzzle puzzle, List<Preset> presets) => presetsTable.Add(puzzle.PuzzleId(), presets);
-  public static void Add(string puzzleID, List<Preset> presets) => presetsTable.Add(puzzleID, presets);
-
-  internal static GlyphData? LoadPresets(Puzzle puzzle, Solution sol, bool actualSolLoad) {
+  internal static ExPuzzleData? LoadPresets(Puzzle puzzle, Solution sol, bool actualSolLoad) {
     List<int> inputsToRemove = new();
     List<int> outputsToRemove = new();
-    GlyphData? toReturn = null;
+    ExPuzzleData? toReturn = null;
     var puzzleId = puzzle.field_2766;
     if (presetsTable.TryGetValue(puzzleId, out var maybePresetsFromTable)) {
-      var output = new GlyphData();
+      var output = new ExPuzzleData();
       foreach (var preset in maybePresetsFromTable) {
         preset(output, puzzle, sol);
       }
       toReturn = output;
     }
-    else if (ExtransmissionsFormat.TryRead(puzzle, sol, out var extransmissionsGD, ref inputsToRemove, ref outputsToRemove, actualSolLoad)) {
-      toReturn = extransmissionsGD;
+    else if (ExtransmissionsFormat.TryRead(puzzle, sol, out var extransmissionsPD, ref inputsToRemove, ref outputsToRemove, actualSolLoad)) {
+      toReturn = extransmissionsPD;
     }
-    else if (YamlFormat.TryFindYaml(puzzle, out var glyphData, puzzle, sol)) {
-      toReturn = glyphData;
+    else if (YamlFormat.TryFindYaml(puzzle, out var pData, puzzle, sol)) {
+      toReturn = pData;
     }
     //removal
     if (actualSolLoad && (inputsToRemove.Count != 0 || outputsToRemove.Count != 0)) {
@@ -90,16 +87,66 @@ public static class Presets {
     };
   }
 
-  private struct FuckingComparer : IEqualityComparer<Molecule> {//I can't get Distinct to just take a lambda >:(
-    public readonly bool Equals(Molecule x, Molecule y) => molecMatchesExact(x, y);
-    public readonly int GetHashCode(Molecule obj) => obj.GetHashCode();
+
+  internal static void Spawner(
+      ref ExPuzzleData puzzleData,
+      List<Molecule>? spawnAtBeginning = null,
+      List<MultiOutputDependency>? spawnOnOutput = null,
+      string customName = "",
+      string customDesc = "",
+      HexIndex? forcedOrigin = null,
+      bool fixDisjointMolecules = false) {
+    spawnAtBeginning ??= new();
+    spawnOnOutput ??= new();
+    var combined = spawnAtBeginning.Concat(spawnOnOutput.SelectMany(m => m.molecules));
+    var combinedDeduplicated = combined.Distinct(new FuckingComparer()).ToList();
+
+    var glyph = puzzleData.NewGlyph();
+    {
+      glyph.customName = customName == "" ? (spawnOnOutput.Count == 0 ? "Catalyst" : "External Process") : customName;
+      string howMany = spawnAtBeginning.Count > 1 ? $"producing {spawnAtBeginning.Count} molecules to be used as a catalyst." : "producing a single molecule to be used as a catalyst.";
+      if (spawnAtBeginning.Count <= 0) { howMany = "allegedly, though of dubious utility."; }
+      string desc = spawnOnOutput.Count == 0 ? $"A catalyst for the transmutation engine, {howMany}"
+       : "An external process/synthesis connected to this transmutation engine, producing extra molecules on output.";
+      glyph.customDesc = customDesc == "" ? desc : customDesc;
+      glyph.HexesAndBondsFromMolec = combined;
+      glyph.holeTextures = Resources.spawner;
+      glyph.drawInputRawMolecules = combinedDeduplicated;
+      if (forcedOrigin is HexIndex fo) glyph.origin = fo;
+      glyph.fixDisjointMolecules = fixDisjointMolecules;
+      if (spawnAtBeginning is not null) glyph.initialSpawnQueue = spawnAtBeginning;
+      if (spawnOnOutput is not null) glyph.spawnOnOutput = spawnOnOutput;
+    } 
   }
+
+
+  internal static void MultiOutput(
+      ref ExPuzzleData puzzleData,
+      List<Molecule> okOutputs,
+      bool sinkAny = false,
+      bool wrongMolCrashesSim = false,
+      int? mRequiredProducts = null,
+      string customName = "",
+      string customDesc = "",
+      HexIndex? forcedOrigin = null,
+      bool okOutputsIsSequence = false) {
+    int requiredProducts = (int)(mRequiredProducts is null ? 6 : mRequiredProducts);
+    if (requiredProducts < 0) { requiredProducts = 6; } 
+    
+    var glyph = puzzleData.NewGlyph();
+    {
+      glyph.HexesAndBondsFromMolec = okOutputs;
+      if (forcedOrigin is HexIndex fo) glyph.origin = fo;
+    }
+  }
+
+
   //                      *--- Allow normal outputs this time too?
   //                      v
   // n inputs spawned per k outputs......
   //  (with an additional c inputs at the beginning)
   // Can be the same as the Catalyst preset too, but for a normal catalyst you just have the first c inputs and the rest is just n = 0 inputs per k outputs
-  public static Preset Spawner(
+  internal static Preset Spawner(
       List<Molecule>? spawnAtBeginning = null,
       MultiOutputDependency[]? spawnOnOutput = null,
       string customName = "",
@@ -111,18 +158,10 @@ public static class Presets {
     var combined = spawnAtBeginning.Concat(spawnOnOutput.SelectMany(m => m.molecules)).ToList();
     var combinedDeduplicated = combined.Distinct(new FuckingComparer()).ToList();
     float molCountF = (float)combinedDeduplicated.Count;
-    HexesAndBonds(combined, out var hexes, out var sortaBonds);
+    HexesAndBondsOut(combined, out var hexes, out var sortaBonds);
     return (gd, puzzle, sol) => {
       var nextGlyph = PushOrigin(gd, forcedOrigin);
       gd.partTypeModify += (partTypes, sol) => {
-        partTypes[nextGlyph].SetHexesToAllMols(combined);
-        string name = spawnOnOutput.Length == 0 ? "Catalyst" : "External Process";
-        string howMany = spawnAtBeginning.Count > 1 ? $"producing {spawnAtBeginning.Count} molecules to be used as a catalyst." : "producing a single molecule to be used as a catalyst.";
-        if (spawnAtBeginning.Count <= 0) { howMany = "allegedly, though of dubious utility."; }
-        string desc = spawnOnOutput.Length == 0 ? $"A catalyst for the transmutation engine, {howMany}"
-         : "An external process/synthesis connected to this transmutation engine, producing extra molecules on output.";
-        partTypes[nextGlyph].SetName(customName == "" ? name : customName);
-        partTypes[nextGlyph].SetDescription(customDesc == "" ? desc : customDesc);
       };
       gd.partRenderer += (glyphIndex, part, pos, seb, renderer) => {
         var pss = PSS(seb, part);
@@ -213,7 +252,7 @@ public static class Presets {
 
 
 #pragma warning disable CS0618 // Type or member is obsolete
-  public static Preset MultiOutput(List<Molecule> okOutputs,
+  internal static Preset MultiOutput(List<Molecule> okOutputs,
       bool sinkAny = false,
       bool wrongMolCrashesSim = false,
       int? mRequiredProducts = null,
@@ -223,7 +262,7 @@ public static class Presets {
       bool okOutputsIsSequence = false) {
     int requiredProducts = (int)(mRequiredProducts is null ? 6 : mRequiredProducts);
     if (requiredProducts < 0) { requiredProducts = 6; }
-    HexesAndBonds(okOutputs, out var hexes, out var sortaBonds);
+    HexesAndBondsOut(okOutputs, out var hexes, out var sortaBonds);
     float molCountF = (float)okOutputs.Count;
     return (gd, puzzle, sol) => {
       var nextGlyph = PushOrigin(gd, forcedOrigin);
@@ -272,10 +311,10 @@ public static class Presets {
                 seb, pss, renderer, pos, part);
             }
           }
-          else if(okOutputsIsSequence) {
+          else if (okOutputsIsSequence) {
             var idx = SpawnerGlyph.partTypes[nextGlyph].GetDynStateOrDef<int>("seq");
-              SpawnerGlyph.DrawMolAsIfOutput(okOutputs[idx % okOutputs.Count],
-                seb, pss, renderer, pos, part);
+            SpawnerGlyph.DrawMolAsIfOutput(okOutputs[idx % okOutputs.Count],
+              seb, pss, renderer, pos, part);
           }
           else {
             SpawnerGlyph.DrawMolAsIfOutput(okOutputs[(int)Math.Floor(seb.AccumulatedTime() % molCountF)],
@@ -351,7 +390,7 @@ public static class Presets {
     };
   }
 
-  public static Preset RandomInputRule(List<Molecule> randomBag,
+  internal static Preset RandomInputRule(List<Molecule> randomBag,
       MultiOutputDependency[]? dependentOutputs = null,
       string customName = "",
       string customDesc = "",
@@ -384,7 +423,7 @@ public static class Presets {
     }
 
     float molCountF = (float)randomBag.Count;
-    HexesAndBonds(randomBag, out var hexes, out var sortaBonds);
+    HexesAndBondsOut(randomBag, out var hexes, out var sortaBonds);
     return (gd, puzzle, sol) => {
       var nextGlyph = PushOrigin(gd, forcedOrigin);
       gd.partTypeModify += (partTypes, sol) => {
@@ -495,25 +534,5 @@ public static class Presets {
   }
 
 #pragma warning restore CS0618 // Type or member is obsolete
-  public struct MultiOutputDependency {
-    public int outputGlyphIndex = 0;
-    public int outputMoleculeIndex = 0;
-    public Molecule[] molecules = new Molecule[0];
 
-    public MultiOutputDependency(int glyphIndex, int molIndex) { outputGlyphIndex = glyphIndex; outputMoleculeIndex = molIndex; }
-  }
-
-  private static int PushOrigin(GlyphData gd) {
-    gd.origins.Add(new HexIndex(gd.origins.Count - (gd.origins.Count % 2 == 0 ? 0 : 4), gd.origins.Count + 1 * 5));
-    return gd.origins.Count - 1;
-  }
-  private static int PushOrigin(GlyphData gd, HexIndex? optLocation) {
-    if (optLocation is not null) {
-      gd.origins.Add((HexIndex)optLocation);
-      return gd.origins.Count - 1;
-    }
-    else {
-      return PushOrigin(gd);
-    }
-  }
 }

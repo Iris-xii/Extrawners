@@ -48,18 +48,18 @@ public static class ExtransmissionsFormat {
   //   public List<PuzzleModel.PuzzleIoM>? RandomInputs = null;
   //   public List<PuzzleModel.PuzzleIoM>? RandomOutputs = null;
   // }
-  public static bool TryRead(Puzzle puzzle, Solution sol, out GlyphData glyphData, ref List<int> inputsToRemove, ref List<int> outputsToRemove, bool actualSolLoad) {
-    glyphData = new();
+  internal static bool TryRead(Puzzle puzzle, Solution sol, out ExPuzzleData data, ref List<int> inputsToRemove, ref List<int> outputsToRemove, bool actualSolLoad) {
+    data = new();
     bool any = false;
     if(puzzle.CustomPermissions is null) return false;
     foreach (var customPerm in puzzle.CustomPermissions) {
-      ReadCustomPermissionString(customPerm, glyphData, puzzle, sol, setTrueIfAlteredGd: ref any, inputsToRemove, outputsToRemove);
+      ReadCustomPermissionString(customPerm, data, puzzle, sol, setTrueIfAlteredGd: ref any, inputsToRemove, outputsToRemove);
     }
     return any;
   }
 
   // yoinked from Extransmissions
-  private static void ReadCustomPermissionString(string customPermissionString, GlyphData gd, Puzzle p, Solution sol,
+  private static void ReadCustomPermissionString(string customPermissionString, ExPuzzleData puzzleData, Puzzle p, Solution sol,
    ref bool setTrueIfAlteredGd,
    List<int> inputsToRemove,
    List<int> outputsToRemove) {
@@ -83,7 +83,7 @@ public static class ExtransmissionsFormat {
             multipliedRandomBag.Add(item);
           }
         }
-        Presets.RandomInputRule(multipliedRandomBag)(gd, p, sol);
+        Presets.RandomInputRule(multipliedRandomBag)(puzzleData, p, sol);
         inputsToRemove.Add(data.InputMol);
         setTrueIfAlteredGd = true;
       }
@@ -91,7 +91,7 @@ public static class ExtransmissionsFormat {
         var data = YamlHelper.Deserializer.Deserialize<MultiOutput>(withoutPrefix);
         if (data is null || data.Accepts is null) { throw new InvalidDataException($"Couldn't parse {withoutPrefix}"); }
         List<Molecule> actualAccepts = data.Accepts.Select(q => q.Molecule.FromModel()).ToList();
-        Presets.MultiOutput(actualAccepts, data.SinkAny, data.WrongMolCrashesSim, data.RequiredProducts)(gd, p, sol);
+        Presets.MultiOutput(actualAccepts, data.SinkAny, data.WrongMolCrashesSim, data.RequiredProducts)(puzzleData, p, sol);
         outputsToRemove.Add(data.OutputMol);
         setTrueIfAlteredGd = true;
       }

@@ -253,7 +253,7 @@ public static class ExtrawnersExt {
     return all_atoms.Where(a => a.QuintAtomType.ToLowerInvariant() == name.ToLowerInvariant()).FirstOrDefault();
   }
 
-  internal static void HexesAndBonds(IEnumerable<Molecule> molecules,
+  internal static void HexesAndBondsOut(IEnumerable<Molecule> molecules,
       out HashSet<HexIndex> hexes,
       out HashSet<Pair<HexIndex, HexIndex>> sortaBonds) {
     hexes = new();
@@ -262,5 +262,17 @@ public static class ExtrawnersExt {
       hexes.UnionWith(mol.method_1100().Select(a => a.Key));
       sortaBonds.UnionWith(mol.method_1101().Select(a => new Pair<HexIndex, HexIndex>(a.field_2187, a.field_2188)));
     }
+  }
+  internal static void HexesAndBondsRef(IEnumerable<Molecule> molecules,
+    ref HashSet<HexIndex> hexes,
+    ref HashSet<Pair<HexIndex, HexIndex>> sortaBonds) { 
+    foreach (var mol in molecules) {
+      hexes.UnionWith(mol.method_1100().Select(a => a.Key));
+      sortaBonds.UnionWith(mol.method_1101().Select(a => new Pair<HexIndex, HexIndex>(a.field_2187, a.field_2188)));
+    }
+  } 
+  internal struct FuckingComparer : IEqualityComparer<Molecule> {//I can't get Distinct to just take a lambda >:(
+    public readonly bool Equals(Molecule x, Molecule y) => molecMatchesExact(x, y);
+    public readonly int GetHashCode(Molecule obj) => obj.GetHashCode();
   }
 }

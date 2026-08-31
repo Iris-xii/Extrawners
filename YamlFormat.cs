@@ -54,12 +54,12 @@ public static class YamlFormat {
     }
   }
 
-  internal static void YamlStringToGlyphData(string yamlString, ref GlyphData glyphData, Puzzle puzzle, Solution sol) {
+  internal static void YamlStringToPuzzleData(string yamlString, ref ExPuzzleData puzzleData, Puzzle puzzle, Solution sol) {
     var presetEntry = YamlHelper.Deserializer.Deserialize<List<PresetEntry>>(yamlString);
     foreach (var e in presetEntry) {
       Log($"Reading {e} from yaml...");
       if (e.Type == "RandomInputRule" || e.Type == "RandomInput") {
-        Presets.MultiOutputDependency[]? maybeDepOutput = null;
+         MultiOutputDependency[]? maybeDepOutput = null;
         if (e.DependentOutputs is PresetEntry.MODependency[] depOuts) {
           maybeDepOutput = depOuts.Select(dO => dO.ToPresetForm()).ToArray();
         }
@@ -70,7 +70,7 @@ public static class YamlFormat {
           forcedOrigin: e.ForcedOrigin,
           fixDisjointMolecules: e.FixDisjointMolecules is bool fdm ? fdm : false,
           disableRng: e.DisableRng is bool drng ? drng : false)
-        (glyphData, puzzle, sol); // <- Don't forget this
+        (puzzleData, puzzle, sol); // <- Don't forget this
       }
       else if (e.Type == "MultiOutput") {
         Presets.MultiOutput(e.OkOutputs.Select(e => e.FromModel()).ToList(),
@@ -81,7 +81,7 @@ public static class YamlFormat {
           customDesc: e.CustomDesc,
           forcedOrigin: e.ForcedOrigin,
           okOutputsIsSequence: e.OkOutputsIsSequence)
-        (glyphData, puzzle, sol);
+        (puzzleData, puzzle, sol);
       }
       else if (e.Type == "Spawner") {
         Presets.Spawner(
@@ -92,7 +92,7 @@ public static class YamlFormat {
           forcedOrigin: e.ForcedOrigin,
           fixDisjointMolecules: e.FixDisjointMolecules is bool b ? b : false
         )
-        (glyphData, puzzle, sol);
+        (puzzleData, puzzle, sol);
       }
       else if (e.Type == "RemoveIO") {
         Presets.RemoveInputsAndOutputsOnlyDuringSolve(puzzle, e.InputsToRemove, e.OutputsToRemove);
@@ -103,8 +103,8 @@ public static class YamlFormat {
     }
   }
 
-  internal static bool TryFindYaml(Puzzle currentlyLoading, out GlyphData maybeGlyphData, Puzzle puzzle, Solution sol) {
-    maybeGlyphData = new();
+  internal static bool TryFindYaml(Puzzle currentlyLoading, out ExPuzzleData maybePuzzleData, Puzzle puzzle, Solution sol) {
+    maybePuzzleData = new();
     var customPath = Path.Combine(class_269.field_2102, "custom");
     string targetFile = $"{currentlyLoading.PuzzleId()}.extrawners.yaml";
     string? foundFilePathFull = null;
@@ -127,7 +127,7 @@ public static class YamlFormat {
     if (foundFilePathFull is not null) {
       Log($"Found extrawners file: {Path.GetFileName(foundFilePathFull)}");
       string fileContents = File.ReadAllText(foundFilePathFull);
-      YamlStringToGlyphData(fileContents, ref maybeGlyphData, puzzle, sol);
+      YamlStringToPuzzleData(fileContents, ref maybePuzzleData, puzzle, sol);
       return true;
     }
     return false;

@@ -8,25 +8,46 @@ using Font = class_1;
 using Texture = class_256;
 using Song = class_186;
 using VanillaAtoms = Brimstone.API.VanillaAtoms;
-using BF = System.Reflection.BindingFlags;
-
-using static Extrawners.ExtrawnersMod;
-using System.Runtime.CompilerServices;
+using BF = System.Reflection.BindingFlags; 
 using Quintessential;
 using System;
 
+using static Extrawners.ExtrawnersMod; 
 using static ExtrawnersExt;
-
 using static LogicWhen;
 
+
 #nullable enable
-public static class SpawnerGlyph {
+internal sealed record class SpawnerGlyph {
 
-  public const string PART_ID = "extrawners-glyph";
+  internal HexIndex origin;
+  internal int partTypesIndex = -1;
+  internal HashSet<HexIndex> holeHexes = new();
+  internal HashSet<Pair<HexIndex, HexIndex>> holeBonds = new();
+  internal string? customName = null;
+  internal string? customDesc = null;
+  internal Resources.HoleGlyph holeTextures = Resources.normal;
+  internal List<Molecule> drawInputRawMolecules = new();
+  internal List<Molecule> drawOutputRawMolecules = new();
+  internal bool fixDisjointMolecules = false;
+  internal List<MultiOutputDependency> spawnOnOutput = new();
+  internal List<Molecule> initialSpawnQueue = new();
+  internal IEnumerable<Molecule> HexesAndBondsFromMolec {
+    set => HexesAndBondsRef(value, ref this.holeHexes, ref this.holeBonds);
+  }
 
-  public static PartType[] partTypes = new PartType[0];
-  internal static GlyphData.RenderFn glyphRenderer = (_, _, _, _, _) => { };
-  internal static GlyphData.LogicFn logicFn = (_, _) => { };
+  internal IEnumerable<HexIndex> CollisionHexes() => holeHexes;
+  internal SpawnerGlyph(int partTypesIndex) { //I miss `required`
+    this.partTypesIndex = partTypesIndex;
+    origin = new HexIndex(partTypesIndex - (partTypesIndex % 2 == 0 ? 0 : 4), partTypesIndex + 1 * 5);
+  }
+
+
+  // --- STATIC STUFF ---
+  internal const string PART_ID = "extrawners-glyph";
+  internal static PartType[] partTypes = new PartType[0];
+  internal static RenderFn glyphRenderer = (_, _, _, _, _) => { };
+  internal static LogicFn logicFn = (_, _) => { };
 
   internal static PartType SpawnerPartTypeNew(int number) => new() {
     field_1528 = PART_ID + $"-{number}", // ID
@@ -319,6 +340,8 @@ public static class SpawnerGlyph {
 
 #pragma warning disable CS0618 // Type or member is obsolete
   internal static void Cleanup() {
+    SpawnerGlyph.logicFn = (_, _) => { };
+    SpawnerGlyph.glyphRenderer = (_, _, _, _, _) => { };
     for (int i = 0; i < MAX_SPAWNERS; i++) {
       SpawnerPartTypeReset(i, partTypes[i]);
       partTypes[i].SetDynState("output", false); //<- anything using partTyes.setState needs to be reset per puzzle

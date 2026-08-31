@@ -23,13 +23,9 @@ using static ExtrawnersExt;
 #pragma warning disable CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
 //dotnet build;rm Extrawners.dll;cp bin/Debug/net4.5.2/Extrawners.dll ./
 public sealed partial class ExtrawnersMod : QuintessentialMod {
-
-
   [SettingsLabel("Print Molecules to log on level load?")]
-  internal static bool printMoleculesOnLoad = true;
-
-  public static Dictionary<string, GlyphData> puzzleGlyphData = new();
-  public static AtomType[] VanillaAtomTypes {
+  internal static bool printMoleculesOnLoad = true; 
+  internal static AtomType[] VanillaAtomTypes {
     get => new AtomType[]{
     VanillaAtoms.air,
     VanillaAtoms.copper,
@@ -106,19 +102,20 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     orig(puzzle, solution);
 
     var puzzleId = puzzle.field_2766;
-    GlyphData? maybeGlyphData = puzzleGlyphData
-      .Where(a => a.Key == puzzleId)
-      .Select(a => a.Value)
-      .FirstOrDefault();
-    maybeGlyphData ??= Presets.LoadPresets(puzzle, solution, actualSolLoad: false);
-    if (maybeGlyphData is GlyphData glyphData) {
-      if (glyphData.origins.Count > SpawnerGlyph.MAX_SPAWNERS) {
+    //GlyphData? maybeGlyphData = puzzleGlyphData
+    //  .Where(a => a.Key == puzzleId)
+    //  .Select(a => a.Value)
+    //  .FirstOrDefault(); 
+    ExPuzzleData? maybePuzzleData = null;
+    maybePuzzleData ??= Presets.LoadPresets(puzzle, solution, actualSolLoad: false);
+    if (maybePuzzleData is ExPuzzleData data) {
+      if (data.glyphs.Count >= SpawnerGlyph.MAX_SPAWNERS) {
         throw new ArgumentOutOfRangeException($"Only {SpawnerGlyph.MAX_SPAWNERS} max spawner glyphs are allowed at a time. Bug me (Iris) to increase this if you need more.");
       }
-      GlyphDataSetupShared(glyphData);
-      for (int i = 0; i < glyphData.origins.Count; i++) {
-        var origin = glyphData.origins[i];
-        glyphData.partTypeModify(SpawnerGlyph.partTypes, solution);
+      SpawnerGlyph.Cleanup();
+      PuzzleDataSetupShared(data);
+      for (int i = 0; i < data.glyphs.Count; i++) {
+        var origin = data.glyphs[i].origin; 
 
         HexIndex position = origin;
         HexRotation rotation = new();
@@ -130,10 +127,11 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     }
   }
 
-  internal static void GlyphDataSetupShared(GlyphData glyphData) {
+  internal static void PuzzleDataSetupShared(ExPuzzleData pData) {
     SpawnerGlyph.Cleanup();
-    SpawnerGlyph.glyphRenderer = glyphData.partRenderer;
-    SpawnerGlyph.logicFn = glyphData.logicFn;
+    SimState simState = new(pData: pData);
+    SpawnerGlyph.glyphRenderer = simState.RenderFn;
+    SpawnerGlyph.logicFn = simState.LogicFn;
   }
 
   public Hook puzzleinfoscreen_method_1275;
@@ -147,23 +145,19 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     if (printMoleculesOnLoad) { PrintMoleculesOnLoad(puzzle); }
     resetPuzzleIODeleteHack = () => { };
 
-    GlyphData? maybeGlyphData = puzzleGlyphData
-      .Where(a => a.Key == puzzleId)
-      .Select(a => a.Value)
-      .FirstOrDefault();
-    maybeGlyphData ??= Presets.LoadPresets(puzzle, solution, actualSolLoad: true);
-    if (maybeGlyphData is GlyphData glyphData) {
-      if (glyphData.origins.Count > SpawnerGlyph.MAX_SPAWNERS) {
+    //GlyphData? maybeGlyphData = puzzleGlyphData
+    //  .Where(a => a.Key == puzzleId)
+    //  .Select(a => a.Value)
+    //  .FirstOrDefault();
+    ExPuzzleData? maybePuzzleData = null;
+    maybePuzzleData ??= Presets.LoadPresets(puzzle, solution, actualSolLoad: true);
+    if (maybePuzzleData is ExPuzzleData data) {
+      if (data.glyphs.Count >= SpawnerGlyph.MAX_SPAWNERS) {
         throw new ArgumentOutOfRangeException($"Only {SpawnerGlyph.MAX_SPAWNERS} max spawner glyphs are allowed at a time. Bug me (Iris) to increase this if you need more.");
       }
-      GlyphDataSetupShared(glyphData);
-      glyphData.partTypeModify(SpawnerGlyph.partTypes, solution);
-    }
-    //Puzzle puzzle = solution.method_1934();
-    //var perms = puzzle.CustomPermissions ?? new();
-
-    //var partList = solution.method_1941();
-    //if(partList.All(p => p.method_1159().field_1528 != SpawnerGlyph.PART_ID)) {} 
+      SpawnerGlyph.Cleanup();
+      PuzzleDataSetupShared(data); 
+    } 
     orig(self, solution);
 
   }
