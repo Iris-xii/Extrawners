@@ -19,7 +19,7 @@ using static ExtrawnersExt;
 using static ExtrawnersMod;
 
 #nullable enable
-public static class Presets {
+internal static class Presets {
   internal delegate void Preset(ExPuzzleData puzzleData, Puzzle puzzle, Solution sol);
   internal static Dictionary<string, List<Preset>> presetsTable = new();
   internal static Dictionary<string, Pair<List<int>, List<int>>> removeTable = new();
@@ -53,10 +53,10 @@ public static class Presets {
     return toReturn;
   }
 
-  public static void RemoveInputsAndOutputsOnlyDuringSolve(Puzzle puzzle, List<int> inputsToRemove, List<int> outputsToRemove) {
+  internal static void RemoveInputsAndOutputsOnlyDuringSolve(Puzzle puzzle, List<int> inputsToRemove, List<int> outputsToRemove) {
     removeTable[puzzle.PuzzleId()] = new Pair<List<int>, List<int>>(inputsToRemove, outputsToRemove);
   }
-  public static void RemoveInputsAndOutputsOnlyDuringSolve(string puzzleId, List<int> inputsToRemove, List<int> outputsToRemove) {
+  internal static void RemoveInputsAndOutputsOnlyDuringSolve(string puzzleId, List<int> inputsToRemove, List<int> outputsToRemove) {
     removeTable[puzzleId] = new Pair<List<int>, List<int>>(inputsToRemove, outputsToRemove);
   }
 
@@ -92,8 +92,8 @@ public static class Presets {
       ref ExPuzzleData puzzleData,
       List<Molecule>? spawnAtBeginning = null,
       List<MultiOutputDependency>? spawnOnOutput = null,
-      string customName = "",
-      string customDesc = "",
+      string argName = "",
+      string argDesc = "",
       HexIndex? forcedOrigin = null,
       bool fixDisjointMolecules = false) {
     spawnAtBeginning ??= new();
@@ -103,20 +103,22 @@ public static class Presets {
 
     var glyph = puzzleData.NewGlyph();
     {
-      glyph.customName = customName == "" ? (spawnOnOutput.Count == 0 ? "Catalyst" : "External Process") : customName;
+      glyph.customName = argName == "" ? (spawnOnOutput.Count == 0 ? "Catalyst" : "External Process") : argName;
       string howMany = spawnAtBeginning.Count > 1 ? $"producing {spawnAtBeginning.Count} molecules to be used as a catalyst." : "producing a single molecule to be used as a catalyst.";
       if (spawnAtBeginning.Count <= 0) { howMany = "allegedly, though of dubious utility."; }
       string desc = spawnOnOutput.Count == 0 ? $"A catalyst for the transmutation engine, {howMany}"
        : "An external process/synthesis connected to this transmutation engine, producing extra molecules on output.";
-      glyph.customDesc = customDesc == "" ? desc : customDesc;
+      glyph.customDesc = argDesc == "" ? desc : argDesc;
       glyph.HexesAndBondsFromMolec = combined;
       glyph.holeTextures = Resources.spawner;
       glyph.drawInputRawMolecules = combinedDeduplicated;
       if (forcedOrigin is HexIndex fo) glyph.origin = fo;
       glyph.fixDisjointMolecules = fixDisjointMolecules;
-      if (spawnAtBeginning is not null) glyph.initialSpawnQueue = spawnAtBeginning;
-      if (spawnOnOutput is not null) glyph.spawnOnOutput = spawnOnOutput;
-    } 
+      glyph.produceData = new() {
+        initialSpawnQueue = spawnAtBeginning is null ? new() : spawnAtBeginning, 
+      };
+    }
+    if (spawnOnOutput is not null) puzzleData.multiOutputDependencyTemp[glyph.partTypesIndex] = spawnOnOutput;
   }
 
 
@@ -126,18 +128,74 @@ public static class Presets {
       bool sinkAny = false,
       bool wrongMolCrashesSim = false,
       int? mRequiredProducts = null,
-      string customName = "",
-      string customDesc = "",
+      string argName = "",
+      string argDesc = "",
       HexIndex? forcedOrigin = null,
       bool okOutputsIsSequence = false) {
     int requiredProducts = (int)(mRequiredProducts is null ? 6 : mRequiredProducts);
-    if (requiredProducts < 0) { requiredProducts = 6; } 
-    
+    if (requiredProducts < 0) { requiredProducts = 6; }
+
     var glyph = puzzleData.NewGlyph();
     {
       glyph.HexesAndBondsFromMolec = okOutputs;
       if (forcedOrigin is HexIndex fo) glyph.origin = fo;
+      checked { glyph.requiredProducts = (ushort)requiredProducts; }
+
+      glyph.customName = argName != "" ? argName
+        : okOutputs.Count > 1 ? "Multi-Output" : "Output";
+      string descPartOne = okOutputs.Count > 1 ? "This output accepts multiple potential products." : "A product for the alchemical engine.";
+      string descPartTwo = "";
+      if (sinkAny && wrongMolCrashesSim) {
+        descPartTwo = " It also accepts any molecule that may fit, but inserting an incorrect molecule will halt the alchemical engine.";
+      }
+      else if (sinkAny && !wrongMolCrashesSim) {
+        descPartTwo = " It also accepts any molecule that may fit, but it will not count as progress towards the solution.";
+      }
+      glyph.customDesc = argDesc == "" ? $"{descPartOne}{descPartTwo}" : argDesc;
+      glyph.drawOutputRawMolecules = okOutputs;
+      Resources.HoleGlyph color;
+      if (sinkAny && !wrongMolCrashesSim) color = Resources.blue;
+      else if (sinkAny && wrongMolCrashesSim) color = Resources.crimson;
+      else color = Resources.normal;
+      glyph.holeTextures = color;
+
+      var fallback = SinkEffect.K.IGNORE;
+      if (sinkAny && !wrongMolCrashesSim) fallback = SinkEffect.K.SINK_NO_PROGRESS;
+      else if (sinkAny && wrongMolCrashesSim) fallback = SinkEffect.K.SINK_CRASH;
+      glyph.sinkData = new() {
+        progressMolecules = okOutputsIsSequence ? new() : okOutputs,
+        sequencedProgressMolecules = okOutputsIsSequence ? okOutputs : new(),
+        resultWhenFitButNoMatch = fallback
+      };
     }
+  }
+  internal static void RandomInputRule(
+    ref ExPuzzleData puzzleData,
+    List<Molecule> randomBag,
+    List<MultiOutputDependency>? dependentOutputs = null,
+    string argName = "",
+    string argDesc = "",
+    HexIndex? forcedOrigin = null,
+    bool fixDisjointMolecules = false,
+    bool disableRng = false) {
+ 
+    var glyph = puzzleData.NewGlyph();
+    {
+      if (forcedOrigin is HexIndex fo) glyph.origin = fo;
+      glyph.fixDisjointMolecules = fixDisjointMolecules;
+      glyph.HexesAndBondsFromMolec = randomBag;
+      glyph.drawInputRawMolecules = randomBag;
+      glyph.holeTextures = randomBag.Count > 1 ? Resources.blue : Resources.normal; //<- think about this harder
+      string maybeRandomInput = randomBag.Count > 1 && !disableRng? "Random Input" : "Reagent";
+      string maybeRandomDesc = randomBag.Count > 1 && !disableRng? "This reagent may be one of several randomly chosen molecules." : "A reagent for the alchemical engine.";
+      glyph.customName = argName == "" ? maybeRandomInput : argName;
+      glyph.customDesc = argDesc == "" ? maybeRandomDesc : argDesc;
+      glyph.produceData = new() {
+        repeatingRefillQueue = randomBag,
+        queueChooseMethod = disableRng? SpawnChooseMethod.RepeatingSeq() : SpawnChooseMethod.Random(),
+      };
+    }
+    if (dependentOutputs is not null) puzzleData.multiOutputDependencyTemp[glyph.partTypesIndex] = dependentOutputs;
   }
 
 
@@ -271,20 +329,6 @@ public static class Presets {
 
       gd.partTypeModify += (partTypes, sol) => {
         partTypes[nextGlyph].SetHexesToAllMols(okOutputs);
-        string name = customName != "" ? customName
-          : okOutputs.Count > 1 ? "Multi-Output" : "Output";
-        string descPartOne = okOutputs.Count > 1 ? "This output accepts multiple potential products." : "A product for the alchemical engine.";
-        string descPartTwo = "";
-        string descPartDependant = partTypes[nextGlyph].GetDynStateOrNull<Queue<Molecule>>("dep") == null ? "" : "\nThis output additionally depends on one of the inputs, requiring that you output a certain molecule after pulling a matching molecule from the input.";
-        if (sinkAny && wrongMolCrashesSim) {
-          descPartTwo = " It also accepts any molecule that may fit, but inserting an incorrect molecule will halt the alchemical engine.";
-        }
-        else if (sinkAny && !wrongMolCrashesSim) {
-          descPartTwo = " It also accepts any molecule that may fit, but it will not count as progress towards the solution.";
-        }
-        partTypes[nextGlyph].SetName(name);
-        partTypes[nextGlyph].SetDescription(customDesc == "" ? $"{descPartOne}{descPartTwo}{descPartDependant}" : customDesc);
-        partTypes[nextGlyph].SetDynState<bool>("output", true);
       };
       gd.partRenderer += (glyphIndex, part, pos, seb, renderer) => {
         var pss = PSS(seb, part);

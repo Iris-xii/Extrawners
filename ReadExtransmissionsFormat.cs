@@ -51,7 +51,7 @@ public static class ExtransmissionsFormat {
   internal static bool TryRead(Puzzle puzzle, Solution sol, out ExPuzzleData data, ref List<int> inputsToRemove, ref List<int> outputsToRemove, bool actualSolLoad) {
     data = new();
     bool any = false;
-    if(puzzle.CustomPermissions is null) return false;
+    if (puzzle.CustomPermissions is null) return false;
     foreach (var customPerm in puzzle.CustomPermissions) {
       ReadCustomPermissionString(customPerm, data, puzzle, sol, setTrueIfAlteredGd: ref any, inputsToRemove, outputsToRemove);
     }
@@ -83,7 +83,7 @@ public static class ExtransmissionsFormat {
             multipliedRandomBag.Add(item);
           }
         }
-        Presets.RandomInputRule(multipliedRandomBag)(puzzleData, p, sol);
+        Presets.RandomInputRule(ref puzzleData, multipliedRandomBag);
         inputsToRemove.Add(data.InputMol);
         setTrueIfAlteredGd = true;
       }
@@ -91,7 +91,7 @@ public static class ExtransmissionsFormat {
         var data = YamlHelper.Deserializer.Deserialize<MultiOutput>(withoutPrefix);
         if (data is null || data.Accepts is null) { throw new InvalidDataException($"Couldn't parse {withoutPrefix}"); }
         List<Molecule> actualAccepts = data.Accepts.Select(q => q.Molecule.FromModel()).ToList();
-        Presets.MultiOutput(actualAccepts, data.SinkAny, data.WrongMolCrashesSim, data.RequiredProducts)(puzzleData, p, sol);
+        Presets.MultiOutput(ref puzzleData, actualAccepts, data.SinkAny, data.WrongMolCrashesSim, data.RequiredProducts);
         outputsToRemove.Add(data.OutputMol);
         setTrueIfAlteredGd = true;
       }

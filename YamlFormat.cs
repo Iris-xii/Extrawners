@@ -48,7 +48,7 @@ public static class YamlFormat {
       public int OutputGlyphIndex = -1;
       public int OutputMoleculeIndex = -1;
       public PuzzleModel.MoleculeM[]? Molecules = null;
-      public Presets.MultiOutputDependency ToPresetForm() => new(OutputGlyphIndex, OutputMoleculeIndex) {
+      public MultiOutputDependency ToPresetForm() => new(OutputGlyphIndex, OutputMoleculeIndex) {
         molecules = Molecules.Select(mm => mm.FromModel()).ToArray()
       };
     }
@@ -59,40 +59,42 @@ public static class YamlFormat {
     foreach (var e in presetEntry) {
       Log($"Reading {e} from yaml...");
       if (e.Type == "RandomInputRule" || e.Type == "RandomInput") {
-         MultiOutputDependency[]? maybeDepOutput = null;
+        MultiOutputDependency[]? maybeDepOutput = null;
         if (e.DependentOutputs is PresetEntry.MODependency[] depOuts) {
           maybeDepOutput = depOuts.Select(dO => dO.ToPresetForm()).ToArray();
         }
-        Presets.RandomInputRule(e.RandomBag.Select(mm => mm.FromModel()).ToList(),
-          dependentOutputs: maybeDepOutput,
-          customName: e.CustomName,
-          customDesc: e.CustomDesc,
+        Presets.RandomInputRule(
+          puzzleData: ref puzzleData,
+          randomBag: e.RandomBag.Select(mm => mm.FromModel()).ToList(),
+          dependentOutputs: maybeDepOutput.ToList(),
+          argName: e.CustomName,
+          argDesc: e.CustomDesc,
           forcedOrigin: e.ForcedOrigin,
           fixDisjointMolecules: e.FixDisjointMolecules is bool fdm ? fdm : false,
-          disableRng: e.DisableRng is bool drng ? drng : false)
-        (puzzleData, puzzle, sol); // <- Don't forget this
+          disableRng: e.DisableRng is bool drng ? drng : false);
       }
       else if (e.Type == "MultiOutput") {
-        Presets.MultiOutput(e.OkOutputs.Select(e => e.FromModel()).ToList(),
+        Presets.MultiOutput(
+          ref puzzleData,
+          okOutputs: e.OkOutputs.Select(e => e.FromModel()).ToList(),
           sinkAny: e.SinkAny is bool sinkB ? sinkB : false,
           wrongMolCrashesSim: e.WrongMolCrashesSim is bool wrongB ? wrongB : false,
           mRequiredProducts: e.RequiredProducts,
-          customName: e.CustomName,
-          customDesc: e.CustomDesc,
+          argName: e.CustomName,
+          argDesc: e.CustomDesc,
           forcedOrigin: e.ForcedOrigin,
-          okOutputsIsSequence: e.OkOutputsIsSequence)
-        (puzzleData, puzzle, sol);
+          okOutputsIsSequence: e.OkOutputsIsSequence);
       }
       else if (e.Type == "Spawner") {
         Presets.Spawner(
+          ref puzzleData,
           spawnAtBeginning: e.SpawnAtBeginning?.Select(e => e.FromModel()).ToList(),
-          spawnOnOutput: e.SpawnOnOutput?.Select(m => m.ToPresetForm()).ToArray(),
-          customName: e.CustomName,
-          customDesc: e.CustomDesc,
+          spawnOnOutput: e.SpawnOnOutput?.Select(m => m.ToPresetForm()).ToList(),
+          argName: e.CustomName,
+          argDesc: e.CustomDesc,
           forcedOrigin: e.ForcedOrigin,
           fixDisjointMolecules: e.FixDisjointMolecules is bool b ? b : false
-        )
-        (puzzleData, puzzle, sol);
+        );
       }
       else if (e.Type == "RemoveIO") {
         Presets.RemoveInputsAndOutputsOnlyDuringSolve(puzzle, e.InputsToRemove, e.OutputsToRemove);

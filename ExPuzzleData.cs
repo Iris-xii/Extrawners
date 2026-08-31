@@ -27,7 +27,9 @@ internal struct MultiOutputDependency {
 
 internal sealed record class ExPuzzleData {
   internal List<SpawnerGlyph> glyphs = new(); 
-
+  /// <summary> Key is spawner idx. </summary>
+  internal Dictionary<int,List<MultiOutputDependency>> multiOutputDependencyTemp = new(); // TODO: Find a way to represent this that doesn't suck as much
+ 
   internal SpawnerGlyph NewGlyph() {
     int next = glyphs.Count;
     var added = new SpawnerGlyph(next);
@@ -50,6 +52,7 @@ internal sealed record class SimState {
   internal List<SpawnerState> spawnerStates;
 
   internal SimState(ExPuzzleData pData) { 
+    pData.PreparePartTypes();
     this.pData = pData;
     this.spawnerStates = pData.glyphs.Select(d => new SpawnerState(d)).ToList();
   }
