@@ -65,8 +65,8 @@ public static class YamlFormat {
         }
         Presets.RandomInputRule(
           puzzleData: ref puzzleData,
-          randomBag: e.RandomBag.Select(mm => mm.FromModel()).ToList(),
-          dependentOutputs: maybeDepOutput.ToList(),
+          randomBag: e.RandomBag is not null? e.RandomBag.Select(mm => mm.FromModel()).ToList() : new(),
+          dependentOutputs: maybeDepOutput is not null ? maybeDepOutput.ToList() : null,
           argName: e.CustomName,
           argDesc: e.CustomDesc,
           forcedOrigin: e.ForcedOrigin,
@@ -89,7 +89,7 @@ public static class YamlFormat {
         Presets.Spawner(
           ref puzzleData,
           spawnAtBeginning: e.SpawnAtBeginning?.Select(e => e.FromModel()).ToList(),
-          spawnOnOutput: e.SpawnOnOutput?.Select(m => m.ToPresetForm()).ToList(),
+          spawnOnOutput: e.SpawnOnOutput is not null? e.SpawnOnOutput?.Select(m => m.ToPresetForm()).ToList() : null,
           argName: e.CustomName,
           argDesc: e.CustomDesc,
           forcedOrigin: e.ForcedOrigin,
