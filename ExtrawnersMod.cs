@@ -22,14 +22,11 @@ using static ExtrawnersExt;
 
 #pragma warning disable CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
 //dotnet build;rm Extrawners.dll;cp bin/Debug/net4.5.2/Extrawners.dll ./
+#nullable disable
 public sealed partial class ExtrawnersMod : QuintessentialMod {
-
-
   [SettingsLabel("Print Molecules to log on level load?")]
-  internal static bool printMoleculesOnLoad = true;
-
-  public static Dictionary<string, GlyphData> puzzleGlyphData = new();
-  public static AtomType[] VanillaAtomTypes {
+  public static bool printMoleculesOnLoad = true;
+  internal static AtomType[] VanillaAtomTypes {
     get => new AtomType[]{
     VanillaAtoms.air,
     VanillaAtoms.copper,
@@ -106,19 +103,19 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     orig(puzzle, solution);
 
     var puzzleId = puzzle.field_2766;
-    GlyphData? maybeGlyphData = puzzleGlyphData
-      .Where(a => a.Key == puzzleId)
-      .Select(a => a.Value)
-      .FirstOrDefault();
-    maybeGlyphData ??= Presets.LoadPresets(puzzle, solution, actualSolLoad: false);
-    if (maybeGlyphData is GlyphData glyphData) {
-      if (glyphData.origins.Count > SpawnerGlyph.MAX_SPAWNERS) {
+    //GlyphData? maybeGlyphData = puzzleGlyphData
+    //  .Where(a => a.Key == puzzleId)
+    //  .Select(a => a.Value)
+    //  .FirstOrDefault(); 
+    ExPuzzleData? maybePuzzleData = null;
+    maybePuzzleData ??= Presets.LoadPresets(puzzle, solution, actualSolLoad: false);
+    if (maybePuzzleData is ExPuzzleData data) {
+      if (data.glyphs.Count >= SpawnerGlyph.MAX_SPAWNERS) {
         throw new ArgumentOutOfRangeException($"Only {SpawnerGlyph.MAX_SPAWNERS} max spawner glyphs are allowed at a time. Bug me (Iris) to increase this if you need more.");
       }
-      GlyphDataSetupShared(glyphData);
-      for (int i = 0; i < glyphData.origins.Count; i++) {
-        var origin = glyphData.origins[i];
-        glyphData.partTypeModify(SpawnerGlyph.partTypes, solution);
+      PuzzleDataSetupShared(data, solution);
+      for (int i = 0; i < data.glyphs.Count; i++) {
+        var origin = data.glyphs[i].origin;
 
         HexIndex position = origin;
         HexRotation rotation = new();
@@ -130,10 +127,17 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     }
   }
 
-  internal static void GlyphDataSetupShared(GlyphData glyphData) {
+  private static SimState STATE_CONTAINER = null!; // <- hackish
+  internal static void PuzzleDataSetupShared(ExPuzzleData pData, Solution sol) {
     SpawnerGlyph.Cleanup();
-    SpawnerGlyph.glyphRenderer = glyphData.partRenderer;
-    SpawnerGlyph.logicFn = glyphData.logicFn;
+    STATE_CONTAINER = new(pData: pData, sol: sol);
+    SpawnerGlyph.glyphRenderer = (a, b, c, d, e) => STATE_CONTAINER.RenderFn(a, b, c, d, e);
+    SpawnerGlyph.logicFn = (sim, when) => {
+      if (sim.Cycle() == 0 && when == LogicWhen.PRE_CYCLE && sim.SEB().method_503() != enum_128.Stopped) {
+        STATE_CONTAINER = new(STATE_CONTAINER.pData, sol); // <- reset
+      }
+      STATE_CONTAINER.LogicFn(sim, when);
+    };
   }
 
   public Hook puzzleinfoscreen_method_1275;
@@ -147,40 +151,36 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     if (printMoleculesOnLoad) { PrintMoleculesOnLoad(puzzle); }
     resetPuzzleIODeleteHack = () => { };
 
-    GlyphData? maybeGlyphData = puzzleGlyphData
-      .Where(a => a.Key == puzzleId)
-      .Select(a => a.Value)
-      .FirstOrDefault();
-    maybeGlyphData ??= Presets.LoadPresets(puzzle, solution, actualSolLoad: true);
-    if (maybeGlyphData is GlyphData glyphData) {
-      if (glyphData.origins.Count > SpawnerGlyph.MAX_SPAWNERS) {
+    //GlyphData? maybeGlyphData = puzzleGlyphData
+    //  .Where(a => a.Key == puzzleId)
+    //  .Select(a => a.Value)
+    //  .FirstOrDefault();
+    ExPuzzleData? maybePuzzleData = null;
+    maybePuzzleData ??= Presets.LoadPresets(puzzle, solution, actualSolLoad: true);
+    if (maybePuzzleData is ExPuzzleData data) {
+      if (data.glyphs.Count >= SpawnerGlyph.MAX_SPAWNERS) {
         throw new ArgumentOutOfRangeException($"Only {SpawnerGlyph.MAX_SPAWNERS} max spawner glyphs are allowed at a time. Bug me (Iris) to increase this if you need more.");
       }
-      GlyphDataSetupShared(glyphData);
-      glyphData.partTypeModify(SpawnerGlyph.partTypes, solution);
+      PuzzleDataSetupShared(data, solution);
     }
-    //Puzzle puzzle = solution.method_1934();
-    //var perms = puzzle.CustomPermissions ?? new();
-
-    //var partList = solution.method_1941();
-    //if(partList.All(p => p.method_1159().field_1528 != SpawnerGlyph.PART_ID)) {} 
     orig(self, solution);
 
   }
 
   public Hook hook_method_947;
   private static void OnScreenTransitionAway(Action<GameLogic, Maybe<class_124>, Maybe<class_124>> orig,
-    GameLogic gl, Maybe<class_124> param_4618, Maybe<class_124> param_4619) { 
+    GameLogic gl, Maybe<class_124> param_4618, Maybe<class_124> param_4619) {
     resetPuzzleIODeleteHack();
     orig(gl, param_4618, param_4619);
   }
 
 
   public Hook hook_method_949;
-  public static void OnScreenTransitionAway2(Action<GameLogic> orig, GameLogic gl) { 
-    class_197<IScreen> stack = (class_197<IScreen>)typeof(GameLogic).GetField("field_2454",BF.NonPublic|BF.Instance).GetValue(gl);
+  public static void OnScreenTransitionAway2(Action<GameLogic> orig, GameLogic gl) {
+    class_197<IScreen> stack = (class_197<IScreen>)typeof(GameLogic).GetField("field_2454", BF.NonPublic | BF.Instance).GetValue(gl);
     //Log($"Transition A {stack.field_1808[stack.field_1808.Count-1]}");
-    if(stack.field_1808[stack.field_1808.Count-1] is class_257) {}
+    if (stack.field_1808[stack.field_1808.Count - 1] is class_257) { }
+    else if (stack.field_1808[stack.field_1808.Count - 1] is class_250) { }
     else {
       resetPuzzleIODeleteHack();
     }
@@ -188,25 +188,25 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
   }
 
 
+  internal static string DumpMol(Molecule m) {
+    var stringEnumerator = m.method_1100()
+    .Select(a => $".Atom(\"{a.Value.field_2275.QuintAtomType}\",{a.Key.Q},{a.Key.R})")
+    .Concat(
+      m.method_1101().Select(a =>
+      $".Bond((enum_126){(int)a.field_2186},{a.field_2187.Q},{a.field_2187.R},{a.field_2188.Q},{a.field_2188.R})")
+    );
+    return String.Join(String.Empty, stringEnumerator);
+  }
   private static void PrintMoleculesOnLoad(Puzzle puzzle) {
-    static string Dump(Molecule m) {
-      var stringEnumerator = m.method_1100()
-      .Select(a => $".Atom(\"{a.Value.field_2275.QuintAtomType}\",{a.Key.Q},{a.Key.R})")
-      .Concat(
-        m.method_1101().Select(a =>
-        $".Bond((enum_126){(int)a.field_2186},{a.field_2187.Q},{a.field_2187.R},{a.field_2188.Q},{a.field_2188.R})")
-      );
-      return String.Join(String.Empty, stringEnumerator);
-    }
     PuzzleInputOutput[] pInput = puzzle.field_2770;
     PuzzleInputOutput[] pOutput = puzzle.field_2771;
     for (int i = 0; i < pInput.Length; i++) {
       Log($"input #{i} @{puzzle.PuzzleId()}:\n" +
-      $"var input{i} = new Molecule(){Dump(pInput[i].field_2813)};\n");
+      $"var input{i} = new Molecule(){DumpMol(pInput[i].field_2813)};\n");
     }
     for (int i = 0; i < pOutput.Length; i++) {
       Log($"output #{i} @{puzzle.PuzzleId()}:\n" +
-      $"var output{i} = new Molecule(){Dump(pOutput[i].field_2813)};\n");
+      $"var output{i} = new Molecule(){DumpMol(pOutput[i].field_2813)};\n");
     }
   }
 
@@ -234,22 +234,15 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
   public delegate void orig_Sim_method_1836(Sim sim); //code that runs every cycle but before parts are processed
   private static void OnSimMethod_1836_WellAfterCycle(orig_Sim_method_1836 orig, Sim sim) {
     orig(sim);
-    SpawnerGlyph.logicFn(sim, LogicWhen.WELL_AFTER_CYCLE);
+    SpawnerGlyph.logicFn(sim, LogicWhen.MID_CYCLE_B4_ANIM);
   }
 
   public Hook hook_sim_method_1825;
 
 #pragma warning disable CS0618 // Type or member is obsolete
   private static bool OnSimMethod1825(On.Sim.orig_method_1825 orig, Sim s) {
-    foreach (var part in s.PartList().Where(p => SpawnerGlyph.partTypes.Contains(p.Type()))) {
-      var pss = PSS(s.SEB(), part);
-      var state = pss.GetDefaultDynState();
-      var partType = part.Type();
-      //Log($"id: {partType.field_1528}, state.isOutput: {state.isOutput}, partType.GetDynStateOrDef<bool>(\"output\") {partType.GetDynStateOrDef<bool>("output")}, "
-      //+$"pss.CurrentOutputs() {pss.CurrentOutputs()}, part.GetRequiredOutputs() {part.GetRequiredOutputs()}, < : {(pss.CurrentOutputs() < part.GetRequiredOutputs())}");
-      if ((state.isOutput || partType.GetDynStateOrDef<bool>("output")) && (pss.CurrentOutputs() < part.GetRequiredOutputs())) {
-        return false;
-      }
+    if (!STATE_CONTAINER.IsExtrawnersSatisfied()) {
+      return false;
     }
     return orig(s);
   }

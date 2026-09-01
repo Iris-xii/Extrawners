@@ -48,51 +48,53 @@ public static class YamlFormat {
       public int OutputGlyphIndex = -1;
       public int OutputMoleculeIndex = -1;
       public PuzzleModel.MoleculeM[]? Molecules = null;
-      public Presets.MultiOutputDependency ToPresetForm() => new(OutputGlyphIndex, OutputMoleculeIndex) {
+      public MultiOutputDependency ToPresetForm() => new(OutputGlyphIndex, OutputMoleculeIndex) {
         molecules = Molecules.Select(mm => mm.FromModel()).ToArray()
       };
     }
   }
 
-  internal static void YamlStringToGlyphData(string yamlString, ref GlyphData glyphData, Puzzle puzzle, Solution sol) {
+  internal static void YamlStringToPuzzleData(string yamlString, ref ExPuzzleData puzzleData, Puzzle puzzle, Solution sol) {
     var presetEntry = YamlHelper.Deserializer.Deserialize<List<PresetEntry>>(yamlString);
     foreach (var e in presetEntry) {
       Log($"Reading {e} from yaml...");
       if (e.Type == "RandomInputRule" || e.Type == "RandomInput") {
-        Presets.MultiOutputDependency[]? maybeDepOutput = null;
+        MultiOutputDependency[]? maybeDepOutput = null;
         if (e.DependentOutputs is PresetEntry.MODependency[] depOuts) {
           maybeDepOutput = depOuts.Select(dO => dO.ToPresetForm()).ToArray();
         }
-        Presets.RandomInputRule(e.RandomBag.Select(mm => mm.FromModel()).ToList(),
-          dependentOutputs: maybeDepOutput,
-          customName: e.CustomName,
-          customDesc: e.CustomDesc,
+        Presets.RandomInputRule(
+          puzzleData: ref puzzleData,
+          randomBag: e.RandomBag is not null? e.RandomBag.Select(mm => mm.FromModel()).ToList() : new(),
+          dependentOutputs: maybeDepOutput is not null ? maybeDepOutput.ToList() : null,
+          argName: e.CustomName,
+          argDesc: e.CustomDesc,
           forcedOrigin: e.ForcedOrigin,
           fixDisjointMolecules: e.FixDisjointMolecules is bool fdm ? fdm : false,
-          disableRng: e.DisableRng is bool drng ? drng : false)
-        (glyphData, puzzle, sol); // <- Don't forget this
+          disableRng: e.DisableRng is bool drng ? drng : false);
       }
       else if (e.Type == "MultiOutput") {
-        Presets.MultiOutput(e.OkOutputs.Select(e => e.FromModel()).ToList(),
+        Presets.MultiOutput(
+          ref puzzleData,
+          okOutputs: e.OkOutputs.Select(e => e.FromModel()).ToList(),
           sinkAny: e.SinkAny is bool sinkB ? sinkB : false,
           wrongMolCrashesSim: e.WrongMolCrashesSim is bool wrongB ? wrongB : false,
           mRequiredProducts: e.RequiredProducts,
-          customName: e.CustomName,
-          customDesc: e.CustomDesc,
+          argName: e.CustomName,
+          argDesc: e.CustomDesc,
           forcedOrigin: e.ForcedOrigin,
-          okOutputsIsSequence: e.OkOutputsIsSequence)
-        (glyphData, puzzle, sol);
+          okOutputsIsSequence: e.OkOutputsIsSequence);
       }
       else if (e.Type == "Spawner") {
         Presets.Spawner(
+          ref puzzleData,
           spawnAtBeginning: e.SpawnAtBeginning?.Select(e => e.FromModel()).ToList(),
-          spawnOnOutput: e.SpawnOnOutput?.Select(m => m.ToPresetForm()).ToArray(),
-          customName: e.CustomName,
-          customDesc: e.CustomDesc,
+          spawnOnOutput: e.SpawnOnOutput is not null? e.SpawnOnOutput?.Select(m => m.ToPresetForm()).ToList() : null,
+          argName: e.CustomName,
+          argDesc: e.CustomDesc,
           forcedOrigin: e.ForcedOrigin,
           fixDisjointMolecules: e.FixDisjointMolecules is bool b ? b : false
-        )
-        (glyphData, puzzle, sol);
+        );
       }
       else if (e.Type == "RemoveIO") {
         Presets.RemoveInputsAndOutputsOnlyDuringSolve(puzzle, e.InputsToRemove, e.OutputsToRemove);
@@ -103,8 +105,8 @@ public static class YamlFormat {
     }
   }
 
-  internal static bool TryFindYaml(Puzzle currentlyLoading, out GlyphData maybeGlyphData, Puzzle puzzle, Solution sol) {
-    maybeGlyphData = new();
+  internal static bool TryFindYaml(Puzzle currentlyLoading, out ExPuzzleData maybePuzzleData, Puzzle puzzle, Solution sol) {
+    maybePuzzleData = new();
     var customPath = Path.Combine(class_269.field_2102, "custom");
     string targetFile = $"{currentlyLoading.PuzzleId()}.extrawners.yaml";
     string? foundFilePathFull = null;
@@ -127,7 +129,7 @@ public static class YamlFormat {
     if (foundFilePathFull is not null) {
       Log($"Found extrawners file: {Path.GetFileName(foundFilePathFull)}");
       string fileContents = File.ReadAllText(foundFilePathFull);
-      YamlStringToGlyphData(fileContents, ref maybeGlyphData, puzzle, sol);
+      YamlStringToPuzzleData(fileContents, ref maybePuzzleData, puzzle, sol);
       return true;
     }
     return false;

@@ -20,7 +20,7 @@ using BF = System.Reflection.BindingFlags;
 using static ExtrawnersMod;
 
 #nullable enable
-public static class ExtrawnersExt {
+internal static class ExtrawnersExt {
   public static class BondKinds {
     public const enum_126 normal = enum_126.Standard;
     public const enum_126 triplex_ogr = enum_126.Prisma0 | enum_126.Prisma1 | enum_126.Prisma2;
@@ -80,7 +80,24 @@ public static class ExtrawnersExt {
     t.field_1529 = class_134.method_253(name, string.Empty);
   public static void SetDescription(this PartType t, string desc) =>
     t.field_1530 = class_134.method_253(desc, string.Empty);
-
+ 
+  internal static void DrawMol(Molecule rawM,
+      PartSimState pss,
+      Vector2 rendererPos,
+      Part part,
+      float rotation = 0f,
+      float alpha = 1f,
+      float fractionOnBoard = 1f,
+      float shadowStrength = 1f,
+      bool light = false) {
+    Editor.method_925(rawM.method_1115(PartRotation(pss)),
+      rendererPos,
+      -part.method_1161(), //hexindex
+      rotation /*rotation*/,
+      alpha /*alpha*/,
+      fractionOnBoard /* 0 = gone*/,
+      shadowStrength /*shadow str*/, light /*light*/, null);
+  }
   [Obsolete]
   public static void SetAsOutput(this PartType t) => t.SetDynState<bool>("output", true);
 
@@ -103,7 +120,7 @@ public static class ExtrawnersExt {
 
   public static Func<Molecule, Molecule, bool> molecMatchesExact =
       typeof(Sim).GetMethod("method_1844", BF.NonPublic | BF.Static).CreateDelegate<Func<Molecule, Molecule, bool>>();
-  public static bool MolecMatchesSinkAny(Molecule simMolecShifted, Molecule templateShifted) {
+  public static bool MolecMatchesSinkAny(Molecule simMolecShifted, Molecule templateShifted,Sim sim) {
     // Serializing them and de-serializing them is a bit jank but
     // I didn't feel like writing a clone function by hand and otherwise
     // there is weird action at a distance from the molecules referencing
@@ -122,6 +139,21 @@ public static class ExtrawnersExt {
     foreach (var hi in inBaseButNotGrabbed) {
       simTemplateMutated.method_1107(hi);
     }
+    // bond removal method_1114 
+    List<Pair<HexIndex, HexIndex>> removeTemplate = new();
+    foreach (var bnd in simTemplateMutated.method_1101()) {
+      removeTemplate.Add(new(bnd.field_2187, bnd.field_2188));
+    } 
+    foreach (var bnd in removeTemplate) {
+      Brimstone.API.RemoveBonds(sim,simTemplateMutated,bnd.Left,bnd.Right,false,false); 
+    }
+    List<Pair<HexIndex, HexIndex>> removeSim = new();
+    foreach (var bnd in simMutated.method_1101()) {
+      removeSim.Add(new(bnd.field_2187, bnd.field_2188));
+    }
+    foreach (var bnd in removeSim) {
+      Brimstone.API.RemoveBonds(sim,simMutated,bnd.Left,bnd.Right,false,false); 
+    }  
     return molecMatchesExact(simTemplateMutated, simMutated);
     //TODO: bond adjusting and improve this, it's just yoinked from Extransmissions.
   }
@@ -133,15 +165,16 @@ public static class ExtrawnersExt {
       return maybeHolding.method_1085() && (maybeHolding.method_1087() == molec);
     });
   }
-  public static bool DoesNotOverlap(Sim sim, Part item2, Molecule m) {
-    HashSet<HexIndex> hashSet = new();
+  public static bool DoesNotOverlap(Sim sim, Part item2, Molecule shifted,
+  HashSet<HexIndex>? alreadyOccupiedAbsolute = null) {
+    HashSet<HexIndex> hashSet = alreadyOccupiedAbsolute ?? new();
     foreach (Molecule item in sim.field_3823) {
       hashSet.UnionWith(item.method_1100().Keys);
     }
     //HexIndex param_ = item2.method_1161();
     //HexRotation param_2 = item2.method_1163();
     //Molecule molecule = item2.method_1185(sim.m1817()).method_1115(param_2).method_1117(param_);
-    if (!m1837(sim, m, hashSet)) {
+    if (!m1837(sim, shifted, hashSet)) {
       return true;
     }
     return false;
@@ -253,7 +286,7 @@ public static class ExtrawnersExt {
     return all_atoms.Where(a => a.QuintAtomType.ToLowerInvariant() == name.ToLowerInvariant()).FirstOrDefault();
   }
 
-  internal static void HexesAndBonds(IEnumerable<Molecule> molecules,
+  internal static void HexesAndBondsOut(IEnumerable<Molecule> molecules,
       out HashSet<HexIndex> hexes,
       out HashSet<Pair<HexIndex, HexIndex>> sortaBonds) {
     hexes = new();
@@ -262,5 +295,17 @@ public static class ExtrawnersExt {
       hexes.UnionWith(mol.method_1100().Select(a => a.Key));
       sortaBonds.UnionWith(mol.method_1101().Select(a => new Pair<HexIndex, HexIndex>(a.field_2187, a.field_2188)));
     }
+  }
+  internal static void HexesAndBondsRef(IEnumerable<Molecule> molecules,
+    ref HashSet<HexIndex> hexes,
+    ref HashSet<Pair<HexIndex, HexIndex>> sortaBonds) {
+    foreach (var mol in molecules) {
+      hexes.UnionWith(mol.method_1100().Select(a => a.Key));
+      sortaBonds.UnionWith(mol.method_1101().Select(a => new Pair<HexIndex, HexIndex>(a.field_2187, a.field_2188)));
+    }
+  }
+  internal struct FuckingComparer : IEqualityComparer<Molecule> {//I can't get Distinct to just take a lambda >:(
+    public readonly bool Equals(Molecule x, Molecule y) => molecMatchesExact(x, y);
+    public readonly int GetHashCode(Molecule obj) => obj.GetHashCode();
   }
 }

@@ -1,0 +1,80 @@
+namespace Extrawners;
+
+using PartType = class_139;
+using PartTypes = class_191;
+using Permissions = enum_149;
+using AtomTypes = class_175;
+using Font = class_1;
+using Texture = class_256;
+using Song = class_186;
+using VanillaAtoms = Brimstone.API.VanillaAtoms;
+using BF = System.Reflection.BindingFlags;
+
+using static Extrawners.ExtrawnersMod;
+using static ExtrawnersExt;
+using Quintessential;
+
+using static LogicWhen;
+
+/// <summary> Spawns `molecules` when defined output swallows a molecule. </summary>
+internal struct MultiOutputDependency {
+  internal int outputGlyphIndex = 0;
+  internal int outputMoleculeIndex = 0; // <- somewhat dubious
+  internal Molecule[] molecules = new Molecule[0];
+  internal MultiOutputDependency(int glyphIndex, int molIndex) { outputGlyphIndex = glyphIndex; outputMoleculeIndex = molIndex; }
+}
+internal static class MultiOutputDependencyExt {
+  internal static CounterData ToCounterDataRandomInput(this List<MultiOutputDependency> list,
+  SpawnerGlyph thisGlyph,  
+  List<Molecule> produceList) {
+    int nextAvailableCounterName = 0;
+    int randomIdent = list.GetHashCode();
+    List<CounterOnProduce> oep = new() {};
+    List<CounterWithdrawal> withdrawals = new();
+    foreach(var mod in list) {
+      oep.Add(new() {
+        needGlyphIndexIfNotEmpty = new() {thisGlyph.partTypesIndex},
+        mustHaveBeenOneOfIfNotEmptyRaw = new() {produceList[mod.outputMoleculeIndex]},
+        ops = new() {
+          CounterOp.Sum($"{randomIdent}_{nextAvailableCounterName}",1)
+        }
+      });
+      withdrawals.Add(CounterWithdrawal.SinkTakeover(
+        mod.molecules.ToList(),
+        new() { { $"{randomIdent}_{nextAvailableCounterName}", 1 } },
+         mod.outputGlyphIndex,
+         forceTakeover: true
+      ));
+      nextAvailableCounterName += 1;
+    }
+    return new CounterData() {
+      onExtrawnersProduce = oep,
+      withdrawals = withdrawals
+    };
+  }
+  internal static CounterData ToCounterDataSpawner(this List<MultiOutputDependency> list,SpawnerGlyph onTarget) {
+    int nextAvailableCounterName = 0;
+    int randomIdent = list.GetHashCode();
+    List<CounterOnSink> cos = new();
+    List<CounterWithdrawal> withdrawals = new();
+    foreach (var mod in list) {
+      cos.Add(new CounterOnSink() {
+        needGlyphIndexIfNotEmpty = new() { mod.outputGlyphIndex },
+        mustHaveProgressedOnSink = true,
+        ops = new() {
+          CounterOp.Sum($"{randomIdent}_{nextAvailableCounterName}",1)
+        }
+      });
+      withdrawals.Add(CounterWithdrawal.Producing(mod.molecules.ToList(),
+        new() { { $"{randomIdent}_{nextAvailableCounterName}", 1 } },
+        onTarget
+        ));
+
+      nextAvailableCounterName += 1;
+    }
+    return new CounterData() {
+      onExtrawnersSink = cos,
+      withdrawals = withdrawals
+    };
+  }
+}
