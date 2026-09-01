@@ -196,9 +196,8 @@ internal static class Presets {
       };
     }
     if (dependentOutputs is not null) puzzleData.multiOutputDependencyTemp[glyph.partTypesIndex] = dependentOutputs;
-  }
+  } 
 /*
-
   //                      *--- Allow normal outputs this time too?
   //                      v
   // n inputs spawned per k outputs......

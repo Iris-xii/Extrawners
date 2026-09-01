@@ -27,7 +27,9 @@ internal sealed partial record class SpawnerGlyph {
   internal string? customName = null;
   internal string? customDesc = null;
   internal Resources.HoleGlyph holeTextures = Resources.normal;
+  /// <summary> Preview molecule as if it were an input (produces molecs) </summary>
   internal List<Molecule> drawInputRawMolecules = new();
+  /// <summary> Preview molecule as if it were an output (sink) </summary>
   internal List<Molecule> drawOutputRawMolecules = new();
   internal bool fixDisjointMolecules = false; 
   /// <summary> If != 0, need this many products to complete the puzzle </summary>

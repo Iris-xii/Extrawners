@@ -19,11 +19,26 @@ using static LogicWhen;
 
 #nullable enable
 
-internal record  struct SpawnChooseMethod() {
-  internal enum K {SEQUENCE,RANDOM}
-  private K k = K.SEQUENCE; 
-  internal static SpawnChooseMethod RepeatingSeq() => new() {k = K.SEQUENCE};
-  internal static SpawnChooseMethod Random() => new() {k = K.RANDOM};
+internal record struct SpawnChooseMethod() {
+  internal enum K { SEQUENCE, RANDOM }
+  private K k = K.SEQUENCE;
+  internal static SpawnChooseMethod RepeatingSeq() => new() { k = K.SEQUENCE };
+  internal static SpawnChooseMethod Random() => new() { k = K.RANDOM };
+  internal Molecule? PeekChooseFrom(List<Molecule> mlist,
+      Random rng,
+      out int indexChosen) {
+    indexChosen = -1;
+    if (mlist.Count == 0) return null;
+    if (k == K.SEQUENCE) {
+      indexChosen = 0;
+      return mlist[indexChosen];
+    }
+    else if (k == K.RANDOM) {
+      indexChosen = rng.Next(0, mlist.Count); 
+      return mlist[indexChosen];
+    }
+    return null;
+  }
 }
 
 internal sealed record ProduceData() {

@@ -31,8 +31,54 @@ internal sealed class SpawnerState {
   /// <summary> For progress, when an output. See data's required molecules to see if it is an output </summary>
   internal int validOutputsSunk = 0;
 
-  internal SpawnerState(SpawnerGlyph glyph) {
-    this.glyph = glyph with { };
-    this.PartTypesIndex = glyph.partTypesIndex;
+  /// <summary> Queue of molecules this glyph wishes to spawn </summary>
+  private List<Molecule> spawnQueueRaw = new();
+
+  internal record struct CurrentlySpawning { internal Molecule m; internal int beganOnCycle; }
+  internal List<CurrentlySpawning> currentlySpawningRaw = new();
+
+
+  internal void RealizeSpawningQueue(Part part, Sim sim) {
+    List<CurrentlySpawning> toRemove = new();
+    foreach (var rawM in currentlySpawningRaw) {
+      if (sim.Cycle() > rawM.beganOnCycle) {
+        if (DoesNotOverlap(sim, part, rawM.m)) {
+          var shifted = rawM.m.ShiftedBy(part);
+          sim.AddMolecule(shifted);
+          if (glyph.fixDisjointMolecules) { Brimstone.API.ForceRecomputeBonds(rawM.m); }
+        }
+        toRemove.Add(rawM);
+      }
+    }
+    foreach (var rem in toRemove) { currentlySpawningRaw.Remove(rem); }
+  }
+
+  internal void BeginSpawning(Random rng, Part part, Sim sim, bool ignoreCooldown = false) {
+    while (true) { //attempt to spawn as many molecules as we're allowed, no longer just one
+      if (spawnQueueRaw.Count <= 0) { //attempt a refill
+        spawnQueueRaw.AddRange(glyph.produceData.repeatingRefillQueue);
+      }
+      if (spawnQueueRaw.Count > 0) {
+        var choose = glyph.produceData.queueChooseMethod;
+        if (choose.PeekChooseFrom(spawnQueueRaw, rng, out var chosenIdx) is Molecule rawM) {
+          var shifted = rawM.ShiftedBy(part);
+          HashSet<HexIndex> occupiedInQueue = new(currentlySpawningRaw
+            .SelectMany(m => m.m.ShiftedBy(part).method_1100().Keys));
+          if (DoesNotOverlap(sim, part, shifted, occupiedInQueue)) {
+            spawnQueueRaw.RemoveAt(chosenIdx);
+            currentlySpawningRaw.Add(new() { m = rawM, beganOnCycle = ignoreCooldown ? -100 : sim.Cycle()-5 });
+            if (glyph.fixDisjointMolecules) { Brimstone.API.ForceRecomputeBonds(shifted); }
+            continue;
+          }
+        }
+      }
+      break;
+    }
+  }
+
+  internal SpawnerState(SpawnerGlyph data) {
+    this.glyph = data with { };
+    this.PartTypesIndex = data.partTypesIndex;
+    spawnQueueRaw.AddRange(data.produceData.initialSpawnQueue);
   }
 }

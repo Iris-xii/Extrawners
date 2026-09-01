@@ -25,7 +25,7 @@ using static ExtrawnersExt;
 #nullable disable
 public sealed partial class ExtrawnersMod : QuintessentialMod {
   [SettingsLabel("Print Molecules to log on level load?")]
-  internal static bool printMoleculesOnLoad = true; 
+  internal static bool printMoleculesOnLoad = true;
   internal static AtomType[] VanillaAtomTypes {
     get => new AtomType[]{
     VanillaAtoms.air,
@@ -114,9 +114,9 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
         throw new ArgumentOutOfRangeException($"Only {SpawnerGlyph.MAX_SPAWNERS} max spawner glyphs are allowed at a time. Bug me (Iris) to increase this if you need more.");
       }
       SpawnerGlyph.Cleanup();
-      PuzzleDataSetupShared(data);
+      PuzzleDataSetupShared(data, solution);
       for (int i = 0; i < data.glyphs.Count; i++) {
-        var origin = data.glyphs[i].origin; 
+        var origin = data.glyphs[i].origin;
 
         HexIndex position = origin;
         HexRotation rotation = new();
@@ -128,11 +128,16 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     }
   }
 
-  internal static void PuzzleDataSetupShared(ExPuzzleData pData) {
-    SpawnerGlyph.Cleanup();
-    SimState simState = new(pData: pData);
-    SpawnerGlyph.glyphRenderer = simState.RenderFn;
-    SpawnerGlyph.logicFn = simState.LogicFn;
+  private static SimState STATE_CONTAINER = null!; // <- hackish
+  internal static void PuzzleDataSetupShared(ExPuzzleData pData, Solution sol) {
+    STATE_CONTAINER = new(pData: pData, sol: sol);
+    SpawnerGlyph.glyphRenderer = STATE_CONTAINER.RenderFn;
+    SpawnerGlyph.logicFn = (sim, when) => {
+      if (sim.Cycle() == 0 && when == LogicWhen.PRE_CYCLE && sim.SEB().method_503() != enum_128.Stopped) {
+        STATE_CONTAINER = new(STATE_CONTAINER.pData, sol); // <- reset
+      }
+      STATE_CONTAINER.LogicFn(sim, when);
+    };
   }
 
   public Hook puzzleinfoscreen_method_1275;
@@ -157,25 +162,25 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
         throw new ArgumentOutOfRangeException($"Only {SpawnerGlyph.MAX_SPAWNERS} max spawner glyphs are allowed at a time. Bug me (Iris) to increase this if you need more.");
       }
       SpawnerGlyph.Cleanup();
-      PuzzleDataSetupShared(data); 
-    } 
+      PuzzleDataSetupShared(data, solution);
+    }
     orig(self, solution);
 
   }
 
   public Hook hook_method_947;
   private static void OnScreenTransitionAway(Action<GameLogic, Maybe<class_124>, Maybe<class_124>> orig,
-    GameLogic gl, Maybe<class_124> param_4618, Maybe<class_124> param_4619) { 
+    GameLogic gl, Maybe<class_124> param_4618, Maybe<class_124> param_4619) {
     resetPuzzleIODeleteHack();
     orig(gl, param_4618, param_4619);
   }
 
 
   public Hook hook_method_949;
-  public static void OnScreenTransitionAway2(Action<GameLogic> orig, GameLogic gl) { 
-    class_197<IScreen> stack = (class_197<IScreen>)typeof(GameLogic).GetField("field_2454",BF.NonPublic|BF.Instance).GetValue(gl);
+  public static void OnScreenTransitionAway2(Action<GameLogic> orig, GameLogic gl) {
+    class_197<IScreen> stack = (class_197<IScreen>)typeof(GameLogic).GetField("field_2454", BF.NonPublic | BF.Instance).GetValue(gl);
     //Log($"Transition A {stack.field_1808[stack.field_1808.Count-1]}");
-    if(stack.field_1808[stack.field_1808.Count-1] is class_257) {}
+    if (stack.field_1808[stack.field_1808.Count - 1] is class_257) { }
     else {
       resetPuzzleIODeleteHack();
     }

@@ -133,15 +133,16 @@ public static class ExtrawnersExt {
       return maybeHolding.method_1085() && (maybeHolding.method_1087() == molec);
     });
   }
-  public static bool DoesNotOverlap(Sim sim, Part item2, Molecule m) {
-    HashSet<HexIndex> hashSet = new();
+  public static bool DoesNotOverlap(Sim sim, Part item2, Molecule shifted,
+  HashSet<HexIndex>? alreadyOccupiedAbsolute = null) {
+    HashSet<HexIndex> hashSet = alreadyOccupiedAbsolute ?? new();
     foreach (Molecule item in sim.field_3823) {
       hashSet.UnionWith(item.method_1100().Keys);
     }
     //HexIndex param_ = item2.method_1161();
     //HexRotation param_2 = item2.method_1163();
     //Molecule molecule = item2.method_1185(sim.m1817()).method_1115(param_2).method_1117(param_);
-    if (!m1837(sim, m, hashSet)) {
+    if (!m1837(sim, shifted, hashSet)) {
       return true;
     }
     return false;

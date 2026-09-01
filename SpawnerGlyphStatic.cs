@@ -139,11 +139,9 @@ internal sealed partial record class SpawnerGlyph {
     PartSimState pss,
     Vector2 rendererPos,
     Part part,
-    Molecule? maybeAnimateMolecule = null) {
-    var state = pss.GetDefaultDynState();
-    Molecule? animateMolecule = maybeAnimateMolecule ?? state.animatingMolecule;
+    IEnumerable<Molecule> animateMoleculesRaw ) { 
     if (seb.method_503() == enum_128.Stopped) { DrawMol(rawM, pss, rendererPos, part); }
-    if (animateMolecule is not null) {
+    foreach (var animateMolecule in animateMoleculesRaw) { 
       DrawMol(animateMolecule, pss, rendererPos, part, fractionOnBoard: seb.AnimTime());
     }
   }
