@@ -239,16 +239,9 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
   public Hook hook_sim_method_1825;
 
 #pragma warning disable CS0618 // Type or member is obsolete
-  private static bool OnSimMethod1825(On.Sim.orig_method_1825 orig, Sim s) {
-    foreach (var part in s.PartList().Where(p => SpawnerGlyph.partTypes.Contains(p.Type()))) {
-      var pss = PSS(s.SEB(), part);
-      var state = pss.GetDefaultDynState();
-      var partType = part.Type();
-      //Log($"id: {partType.field_1528}, state.isOutput: {state.isOutput}, partType.GetDynStateOrDef<bool>(\"output\") {partType.GetDynStateOrDef<bool>("output")}, "
-      //+$"pss.CurrentOutputs() {pss.CurrentOutputs()}, part.GetRequiredOutputs() {part.GetRequiredOutputs()}, < : {(pss.CurrentOutputs() < part.GetRequiredOutputs())}");
-      if ((state.isOutput || partType.GetDynStateOrDef<bool>("output")) && (pss.CurrentOutputs() < part.GetRequiredOutputs())) {
-        return false;
-      }
+  private static bool OnSimMethod1825(On.Sim.orig_method_1825 orig, Sim s) { 
+    if(!STATE_CONTAINER.IsExtrawnersSatisfied()) {
+      return false;
     }
     return orig(s);
   }

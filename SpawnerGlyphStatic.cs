@@ -140,7 +140,7 @@ internal sealed partial record class SpawnerGlyph {
     Vector2 rendererPos,
     Part part,
     IEnumerable<Molecule> animateMoleculesRaw) {
-    if (seb.method_503() == enum_128.Stopped) { DrawMol(rawM, pss, rendererPos, part); } 
+    if (seb.method_503() == enum_128.Stopped) { DrawMol(rawM, pss, rendererPos, part); }
     foreach (var animateMolecule in animateMoleculesRaw) {
       DrawMol(animateMolecule, pss, rendererPos, part, fractionOnBoard: seb.AnimTime());
     }
@@ -151,25 +151,18 @@ internal sealed partial record class SpawnerGlyph {
       class_195 renderer,
       Vector2 rendererPos,
       Part part,
-      Molecule? maybeAnimateMolecule = null,
+      IEnumerable<Molecule> animateMoleculesRaw,
       int currentOutputs = -1,
       int requiredOutputs = -1,
-      bool doOutputText = true) {
-    var state = pss.GetDefaultDynState();
-    Molecule? animateMolecule = maybeAnimateMolecule ?? state.animatingMolecule;
+      bool doOutputText = true) { 
     DrawMol(rawM, pss, rendererPos, part, shadowStrength: 0f, alpha: 0.4f);
-    if (animateMolecule is not null) {
+    foreach (var animateMolecule in animateMoleculesRaw) {
       var alpha = seb.AnimTime() < 0.5f ? 1f : class_162.method_416(seb.AnimTime(), 0.5f, 1f, 1f, 0f);
       DrawMol(animateMolecule, pss, rendererPos, part, fractionOnBoard: class_162.method_416(seb.AnimTime(), 0f, 1f, 1f, 0f), alpha: alpha);
     }
     if (seb is SolutionEditorScreen ses && seb.method_503() != enum_128.Stopped && doOutputText) {
       string currentCount;
-      if (currentOutputs < 0 || requiredOutputs < 0) {
-        currentCount = $"{pss.CurrentOutputs()}/{part.GetRequiredOutputs()}";
-      }
-      else {
-        currentCount = $"{currentOutputs}/{requiredOutputs}";
-      }
+      currentCount = $"{currentOutputs}/{requiredOutputs}";
       Vector2 off = renderer.field_1797;
       class_135.method_272(class_238.field_1989.field_101.field_783, off);
       class_135.method_290(currentCount, off + new Vector2(28f, 7f), class_238.field_1990.field_2143, class_181.field_1718, (enum_0)1, 1f, 0.6f, float.MaxValue, float.MaxValue, 0, default(Color), null, int.MaxValue, param_3473: false, param_3474: true);

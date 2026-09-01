@@ -84,16 +84,18 @@ internal sealed record class SimState {
         SpawnerGlyph.DrawMolAsIfInput(
           data.drawInputRawMolecules[(int)Math.Floor(seb.AccumulatedTime() % data.drawInputRawMolecules.Count)],
           seb, pss, pos, part,
-          animateMoleculesRaw: spawnerState.currentlySpawningRaw.Select(e => e.m));
+          animateMoleculesRaw: spawnerState.currentlySpawningRaw);
       }
       if (data.drawOutputRawMolecules.Count > 0) {
+        //TODO: Accurate preview
         SpawnerGlyph.DrawMolAsIfOutput(
           data.drawOutputRawMolecules[(int)Math.Floor(seb.AccumulatedTime() % data.drawOutputRawMolecules.Count)],
           seb, pss, renderer, pos, part,
+          animateMoleculesRaw: spawnerState.currentlySinkingRaw,
           doOutputText: data.requiredProducts > 0,
           requiredOutputs: data.requiredProducts,
-          currentOutputs: spawnerState.validOutputsSunk <= data.requiredProducts ?
-            spawnerState.validOutputsSunk : data.requiredProducts
+          currentOutputs: spawnerState.validOutputsSank <= data.requiredProducts ?
+            spawnerState.validOutputsSank : data.requiredProducts
         );
       }
     }
@@ -140,7 +142,25 @@ internal sealed record class SimState {
       }
     }
     // Sink
-
+    foreach(var KV in spawnerStates) {
+      SpawnerState state = KV.Value;
+      var part = KV.Key;
+      var pss = PSS(seb, part); 
+      if(when == PRE_CYCLE) {
+        state.currentlySinkingRaw = new();
+      }
+      else if(when.FireGlyph() && !ExtransmutationsCompat.isIchorSuppressionActive) {
+        List<SinkEffect> effects = new();
+        foreach (var simMolec in sim.field_3823) {
+          SinkEffect effect = state.glyph.sinkData.TrySink(simMolec,state.glyph.holeHexes,sim,part,state.moleculesInSequenceSank);
+          effects.Add(effect);
+        }
+        foreach(var effect in effects) {effect.UpdateState(state,sim,part);}
+      }
+    } 
     // Other
   }
+
+  internal bool IsExtrawnersSatisfied() =>
+    spawnerStates.All(KV => KV.Value.IsSatisfied()); 
 }

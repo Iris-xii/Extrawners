@@ -26,29 +26,27 @@ internal sealed class SpawnerState {
   internal readonly SpawnerGlyph glyph;
 
   /// <summary> For <see cref="SinkData.sequencedProgressMolecules"/> </summary>
-  internal int moleculesInSequenceSunk = 0;
+  internal int moleculesInSequenceSank = 0;
 
   /// <summary> For progress, when an output. See data's required molecules to see if it is an output </summary>
-  internal int validOutputsSunk = 0;
+  internal int validOutputsSank = 0;
 
   /// <summary> Queue of molecules this glyph wishes to spawn </summary>
   private List<Molecule> spawnQueueRaw = new();
 
-  internal record struct CurrentlySpawning { internal Molecule m; internal int beganOnCycle; }
-  internal List<CurrentlySpawning> currentlySpawningRaw = new();
+  internal List<Molecule> currentlySpawningRaw = new();
+  internal List<Molecule> currentlySinkingRaw = new();
 
 
   internal void RealizeSpawningQueue(Part part, Sim sim) {
-    List<CurrentlySpawning> toRemove = new();
+    List<Molecule> toRemove = new();
     foreach (var rawM in currentlySpawningRaw) {
-      if (sim.Cycle() > rawM.beganOnCycle) {
-        if (DoesNotOverlap(sim, part, rawM.m)) {
-          var shifted = rawM.m.ShiftedBy(part);
-          sim.AddMolecule(shifted);
-          if (glyph.fixDisjointMolecules) { Brimstone.API.ForceRecomputeBonds(rawM.m); }
-        }
-        toRemove.Add(rawM);
+      if (DoesNotOverlap(sim, part, rawM)) {
+        var shifted = rawM.ShiftedBy(part);
+        sim.AddMolecule(shifted);
+        if (glyph.fixDisjointMolecules) { Brimstone.API.ForceRecomputeBonds(rawM); }
       }
+      toRemove.Add(rawM);
     }
     foreach (var rem in toRemove) { currentlySpawningRaw.Remove(rem); }
   }
@@ -63,10 +61,10 @@ internal sealed class SpawnerState {
         if (choose.PeekChooseFrom(spawnQueueRaw, rng, out var chosenIdx) is Molecule rawM) {
           var shifted = rawM.ShiftedBy(part);
           HashSet<HexIndex> occupiedInQueue = new(currentlySpawningRaw
-            .SelectMany(m => m.m.ShiftedBy(part).method_1100().Keys));
+            .SelectMany(m => m.ShiftedBy(part).method_1100().Keys));
           if (DoesNotOverlap(sim, part, shifted, occupiedInQueue)) {
             spawnQueueRaw.RemoveAt(chosenIdx);
-            currentlySpawningRaw.Add(new() { m = rawM, beganOnCycle = ignoreCooldown ? -100 : sim.Cycle()-5 });
+            currentlySpawningRaw.Add(rawM);
             if (glyph.fixDisjointMolecules) { Brimstone.API.ForceRecomputeBonds(shifted); }
             continue;
           }
@@ -75,6 +73,9 @@ internal sealed class SpawnerState {
       break;
     }
   }
+
+  internal bool IsSatisfied() =>
+    validOutputsSank >= glyph.requiredProducts;
 
   internal SpawnerState(SpawnerGlyph data) {
     this.glyph = data with { };

@@ -21,17 +21,31 @@ using static LogicWhen;
 internal record struct SinkEffect {
   internal enum K : byte { IGNORE, ACCEPT, SINK_NO_PROGRESS, SINK_CRASH }
   private K k;
-  private Molecule? target;
+  private Molecule? targetSim;
   private bool advanceSeq;
   internal static SinkEffect FromEffect(K e, Molecule simM) =>
-    new() { k = e, target = simM };
+    new() { k = e, targetSim = simM };
   internal static SinkEffect Ignore() => new() { k = K.IGNORE };
-  internal static SinkEffect Accept(Molecule simM) => new() { k = K.ACCEPT, target = simM };
+  internal static SinkEffect Accept(Molecule simM) => new() { k = K.ACCEPT, targetSim = simM };
   internal static SinkEffect AcceptAdvanceSeq(Molecule simM) => 
-    new() { k = K.ACCEPT, target = simM, advanceSeq = true };
-  internal static SinkEffect SinkNoProgress(Molecule simM) => new() { k = K.SINK_NO_PROGRESS, target = simM };
-  internal static SinkEffect SinkCrash(Molecule simM) => new() { k = K.SINK_CRASH, target = simM };
-  internal bool ShouldSink() => k != K.IGNORE;
+    new() { k = K.ACCEPT, targetSim = simM, advanceSeq = true };
+  internal static SinkEffect SinkNoProgress(Molecule simM) => new() { k = K.SINK_NO_PROGRESS, targetSim = simM };
+  internal static SinkEffect SinkCrash(Molecule simM) => new() { k = K.SINK_CRASH, targetSim = simM };
+  private bool ShouldSink() => k != K.IGNORE;
+  private bool ShouldProgress() => k == K.ACCEPT;
+  internal void UpdateState(SpawnerState state,Sim sim,Part part) {
+    var seb = sim.SEB();
+    if(ShouldSink() && targetSim is not null) {
+      sim.RemoveMolecule(targetSim);
+      class_238.field_1991.field_1868.Play(seb);
+      state.currentlySinkingRaw.Add(targetSim.SimCoordsToPart(part));
+      if(ShouldProgress()) state.validOutputsSank += 1; 
+      if(advanceSeq) state.moleculesInSequenceSank += 1;
+      if(k == K.SINK_CRASH) {
+        sim.method_1854_crash("Invalid outputs are not allowed in this puzzle.", part.method_1161(), part.method_1161());
+      }
+    }
+  }
 }
 internal sealed record SinkData() {
   internal List<Molecule> progressMolecules = new();
