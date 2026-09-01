@@ -135,7 +135,7 @@ internal sealed record class SimState {
       else if (when.FireGlyph()) {
         state.RealizeSpawningQueue(part, sim);
       }
-      else if (when == WELL_AFTER_CYCLE) {
+      else if (when == MID_CYCLE_BEFORE_ANIM) {
         state.BeginSpawning(rng, part, sim);
       }
     }

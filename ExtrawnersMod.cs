@@ -233,7 +233,7 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
   public delegate void orig_Sim_method_1836(Sim sim); //code that runs every cycle but before parts are processed
   private static void OnSimMethod_1836_WellAfterCycle(orig_Sim_method_1836 orig, Sim sim) {
     orig(sim);
-    SpawnerGlyph.logicFn(sim, LogicWhen.WELL_AFTER_CYCLE);
+    SpawnerGlyph.logicFn(sim, LogicWhen.MID_CYCLE_BEFORE_ANIM);
   }
 
   public Hook hook_sim_method_1825;

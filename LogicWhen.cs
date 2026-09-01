@@ -16,7 +16,7 @@ public enum LogicWhen {
   PRE_CYCLE,
   FIRST_HALF,
   SECOND_HALF,
-  WELL_AFTER_CYCLE,
+  MID_CYCLE_BEFORE_ANIM,
 }
 public static class LogicWhenExt {
   public static bool FireGlyph(this LogicWhen when) => when == FIRST_HALF || when == SECOND_HALF;
