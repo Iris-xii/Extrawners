@@ -32,8 +32,8 @@ internal sealed partial record class SpawnerGlyph {
     field_1539 = true, // Is a glyph 
     field_1549 = null, // Shadow/glow
     field_1550 = null, // Stroke/outline
-    field_1547 = Resources.genericBase[number], // Panel icon
-    field_1548 = Resources.genericBase[number], // Hovered panel icon
+    field_1547 = number < Resources.genericBase.Length ? Resources.genericBase[number] : Resources.genericBase[10], // Panel icon
+    field_1548 = number < Resources.genericBase.Length ? Resources.genericBase[number] : Resources.genericBase[10], // Hovered panel icon
     field_1552 = true, // only one?
     field_1540 = new HexIndex[]{
                 new(0, 0),
@@ -52,8 +52,8 @@ internal sealed partial record class SpawnerGlyph {
     pt.field_1539 = true; // Is a glyph 
     pt.field_1549 = null; // Shadow/glow
     pt.field_1550 = null; // Stroke/outline
-    pt.field_1547 = Resources.genericBase[number]; // Panel icon
-    pt.field_1548 = Resources.genericBase[number]; // Hovered panel icon
+    pt.field_1547 = number < Resources.genericBase.Length ? Resources.genericBase[number] : Resources.genericBase[10]; // Panel icon
+    pt.field_1548 = number < Resources.genericBase.Length ? Resources.genericBase[number] : Resources.genericBase[10]; // Hovered panel icon
     pt.field_1552 = true; // only one?
     pt.field_1540 = new HexIndex[]{
                 new(0, 0),
@@ -70,7 +70,7 @@ internal sealed partial record class SpawnerGlyph {
   }
 
 
-  public static void DrawFullBaseFromMol(
+  internal static void DrawFullBaseFromMol(
       class_195 renderer,
       Molecule mol,
       float offset_x = -23f,
@@ -88,7 +88,7 @@ internal sealed partial record class SpawnerGlyph {
       DrawBaseBond(renderer, from: from, to: to, offset_x, offset_y, bond);
     }
   }
-  public static void DrawFullBaseFromHexesAndBonds<H, B>(
+  internal static void DrawFullBaseFromHexesAndBonds<H, B>(
     class_195 renderer,
     H hexes,
     B bonds,
@@ -109,7 +109,7 @@ internal sealed partial record class SpawnerGlyph {
   }
 
 
-  public static void DrawBaseBond(
+  internal static void DrawBaseBond(
       class_195 renderer,
       HexIndex from,
       HexIndex to,
@@ -124,7 +124,7 @@ internal sealed partial record class SpawnerGlyph {
       OFFSET,
       angle);
   }
-  public static void DrawBase(
+  internal static void DrawBase(
       class_195 renderer,
       HexIndex hexPos,
       Texture? tbase = null,
@@ -134,7 +134,7 @@ internal sealed partial record class SpawnerGlyph {
     renderer.method_528(ring ?? Resources.pipe_ring, hexPos, Vector2.Zero);
 
   }
-  public static void DrawMolAsIfInput(Molecule rawM,
+  internal static void DrawMolAsIfInput(Molecule rawM,
     SolutionEditorBase seb,
     PartSimState pss,
     Vector2 rendererPos,
@@ -145,7 +145,7 @@ internal sealed partial record class SpawnerGlyph {
       DrawMol(animateMolecule, pss, rendererPos, part, fractionOnBoard: seb.AnimTime());
     }
   }
-  public static void DrawMolAsIfOutput(Molecule rawM,
+  internal static void DrawMolAsIfOutput(Molecule rawM,
       SolutionEditorBase seb,
       PartSimState pss,
       class_195 renderer,
@@ -168,107 +168,7 @@ internal sealed partial record class SpawnerGlyph {
       class_135.method_290(currentCount, off + new Vector2(28f, 7f), class_238.field_1990.field_2143, class_181.field_1718, (enum_0)1, 1f, 0.6f, float.MaxValue, float.MaxValue, 0, default(Color), null, int.MaxValue, param_3473: false, param_3474: true);
     }
   }
-  public static void DrawMol(Molecule rawM,
-      PartSimState pss,
-      Vector2 rendererPos,
-      Part part,
-      float rotation = 0f,
-      float alpha = 1f,
-      float fractionOnBoard = 1f,
-      float shadowStrength = 1f,
-      bool light = false) {
-    Editor.method_925(rawM.method_1115(PartRotation(pss)),
-      rendererPos,
-      -part.method_1161(), //hexindex
-      rotation /*rotation*/,
-      alpha /*alpha*/,
-      fractionOnBoard /* 0 = gone*/,
-      shadowStrength /*shadow str*/, light /*light*/, null);
-  }
-
-  public static void QueueMolAnimation(Sim sim,
-      Molecule rawM,
-      PartSimState pss,
-      Part part) {
-    var state = pss.GetDefaultDynState();
-    state.animatingMolecule = rawM;
-  }
-  public static void SpawnMol(Sim sim,
-    Molecule rawM,
-    PartSimState pss,
-    Part part) {
-    var shifted = rawM.ShiftedBy(part);
-    sim.AddMolecule(shifted);
-  }
-  public static void AsIfInput(Sim sim,
-    Molecule rawM,
-    PartSimState pss,
-    Part part,
-    LogicWhen when,
-    bool doAutoStatesReset = true) {
-    var shifted = rawM.ShiftedBy(part);
-    if (when == PRE_CYCLE) {
-      if (doAutoStatesReset) { AutoStatesReset(sim, part, isOutput: false); }
-      if (DoesNotOverlap(sim, part, shifted)) {
-        if (sim.Cycle() == 0) {
-          sim.AddMolecule(shifted);
-        }
-      }
-    }
-    else if (when.FireGlyph()) {
-      if (DoesNotOverlap(sim, part, shifted)) {
-        sim.AddMolecule(shifted);
-      }
-    }
-    else if (when == MID_CYCLE_B4_ANIM) {
-      if (DoesNotOverlap(sim, part, shifted)) {
-        QueueMolAnimation(sim, rawM, pss, part);
-      }
-    }
-  }
-  public static void AsIfOutput(Sim sim,
-    Molecule rawM,
-    PartSimState pss,
-    Part part,
-    LogicWhen when,
-    bool doAutoStatesReset = true,
-    Func<Molecule, Molecule, bool>? molecMatchesFn = null,
-    int outputsAmount = 6) {
-    var seb = sim.SEB();
-    if (when == PRE_CYCLE) {
-      if (doAutoStatesReset) { AutoStatesReset(sim, part, isOutput: true); }
-      part.SetRequiredOutputs(outputsAmount);
-    }
-    else if (when.FireGlyph()) {
-      if (ShouldAcceptMol(sim, rawM, pss, part, out var accepted, molecMatchesFn)) {
-        QueueMolAnimation(sim, rawM, pss, part);
-        sim.RemoveMolecule(accepted);
-        class_238.field_1991.field_1868.Play(seb);
-        pss.AddToCurrentOutputs(1, outputsAmount);
-      }
-    }
-  }
-  public static bool ShouldAcceptMol(Sim sim,
-      Molecule rawTemplateM,
-      PartSimState pss,
-      Part part,
-      out Molecule accepted,
-      Func<Molecule, Molecule, bool>? molecMatchesFn = null,
-      bool doIchor = true) {
-    if (doIchor && ExtransmutationsCompat.isIchorSuppressionActive) { accepted = null!; return false; }
-    molecMatchesFn ??= molecMatchesExact;
-    var seb = sim.SEB();
-    var templateShifted = rawTemplateM.ShiftedBy(part);
-    foreach (var m in sim.field_3823) {
-      if (molecMatchesFn(m, templateShifted) && !sim.MoleculeHeld(m)) {
-        accepted = m;
-        return true;
-      }
-    }
-    accepted = null!;
-    return false;
-  }
-
+ 
   private static void RendererOld(Part part,
       Vector2 pos,
       SolutionEditorBase seb,
@@ -287,7 +187,7 @@ internal sealed partial record class SpawnerGlyph {
     //  Editor.method_925(m.method_1115(pss.field_2726), pos, -part.method_1161(), 0f /*rotation*/, 1f /*alpha*/, 1f /* 0 = gone*/, 1f /*shadow str*/, false /*light*/, null);
     //}
   }
-  public const int MAX_SPAWNERS = 16;
+  public const int MAX_SPAWNERS = 32;
   internal static void LoadPuzzleContent() {
     List<PartType> partTypesList = new();
     for (int i = 0; i < MAX_SPAWNERS; i++) {

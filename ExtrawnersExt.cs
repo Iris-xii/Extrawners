@@ -20,7 +20,7 @@ using BF = System.Reflection.BindingFlags;
 using static ExtrawnersMod;
 
 #nullable enable
-public static class ExtrawnersExt {
+internal static class ExtrawnersExt {
   public static class BondKinds {
     public const enum_126 normal = enum_126.Standard;
     public const enum_126 triplex_ogr = enum_126.Prisma0 | enum_126.Prisma1 | enum_126.Prisma2;
@@ -80,7 +80,24 @@ public static class ExtrawnersExt {
     t.field_1529 = class_134.method_253(name, string.Empty);
   public static void SetDescription(this PartType t, string desc) =>
     t.field_1530 = class_134.method_253(desc, string.Empty);
-
+ 
+  internal static void DrawMol(Molecule rawM,
+      PartSimState pss,
+      Vector2 rendererPos,
+      Part part,
+      float rotation = 0f,
+      float alpha = 1f,
+      float fractionOnBoard = 1f,
+      float shadowStrength = 1f,
+      bool light = false) {
+    Editor.method_925(rawM.method_1115(PartRotation(pss)),
+      rendererPos,
+      -part.method_1161(), //hexindex
+      rotation /*rotation*/,
+      alpha /*alpha*/,
+      fractionOnBoard /* 0 = gone*/,
+      shadowStrength /*shadow str*/, light /*light*/, null);
+  }
   [Obsolete]
   public static void SetAsOutput(this PartType t) => t.SetDynState<bool>("output", true);
 

@@ -25,7 +25,7 @@ using static ExtrawnersExt;
 #nullable disable
 public sealed partial class ExtrawnersMod : QuintessentialMod {
   [SettingsLabel("Print Molecules to log on level load?")]
-  internal static bool printMoleculesOnLoad = true;
+  public static bool printMoleculesOnLoad = true;
   internal static AtomType[] VanillaAtomTypes {
     get => new AtomType[]{
     VanillaAtoms.air,

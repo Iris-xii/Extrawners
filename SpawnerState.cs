@@ -56,8 +56,8 @@ internal sealed class SpawnerState {
   internal void RealizeSpawningQueue(Part part, Sim sim, out List<Molecule> didSpawnRaw) {
     didSpawnRaw = new();
     List<Molecule> toRemove = new();
-    foreach (var rawM in currentlySpawningRaw) {
-      if (DoesNotOverlap(sim, part, rawM)) {
+    foreach (var rawM in currentlySpawningRaw) { 
+      if (DoesNotOverlap(sim, part, rawM.ShiftedBy(part))) {
         var shifted = rawM.ShiftedBy(part);
         sim.AddMolecule(shifted);
         didSpawnRaw.Add(rawM);
