@@ -180,6 +180,7 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     class_197<IScreen> stack = (class_197<IScreen>)typeof(GameLogic).GetField("field_2454", BF.NonPublic | BF.Instance).GetValue(gl);
     //Log($"Transition A {stack.field_1808[stack.field_1808.Count-1]}");
     if (stack.field_1808[stack.field_1808.Count - 1] is class_257) { }
+    else if (stack.field_1808[stack.field_1808.Count - 1] is class_250) { }
     else {
       resetPuzzleIODeleteHack();
     }
