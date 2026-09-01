@@ -24,7 +24,12 @@ internal struct MultiOutputDependency {
   internal MultiOutputDependency(int glyphIndex, int molIndex) { outputGlyphIndex = glyphIndex; outputMoleculeIndex = molIndex; }
 }
 internal static class MultiOutputDependencyExt {
-  internal static CounterData ToCounterData(this List<MultiOutputDependency> list) {
+  internal static CounterData ToCounterDataRandomInput(this List<MultiOutputDependency> list) {
+    return new CounterData() {
+      
+    };
+  }
+  internal static CounterData ToCounterDataSpawner(this List<MultiOutputDependency> list,SpawnerGlyph onTarget) {
     int nextAvailableCounterName = 0;
     List<CounterOnSink> cos = new();
     List<CounterWithdrawal> withdrawals = new();
@@ -37,7 +42,9 @@ internal static class MultiOutputDependencyExt {
         }
       });
       withdrawals.Add(CounterWithdrawal.Producing(mod.molecules.ToList(),
-        new() { { $"{nextAvailableCounterName}", 1 } }));
+        new() { { $"{nextAvailableCounterName}", 1 } },
+        onTarget
+        ));
 
       nextAvailableCounterName += 1;
     }

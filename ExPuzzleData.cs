@@ -123,7 +123,26 @@ internal sealed record class SimState {
         }
       }
       ExtransmutationsCompat.perDynGlyphSimSafeSpots[0] = ichorSafe.ToList();
-    }
+    } 
+    // Sink
+    foreach (var KV in spawnerStates) {
+      SpawnerState state = KV.Value;
+      var part = KV.Key;
+      var pss = PSS(seb, part);
+      if (when == PRE_CYCLE) {
+        state.currentlySinkingRaw = new();
+      }
+      else if (when == FIRST_HALF && !ExtransmutationsCompat.isIchorSuppressionActive) {
+        List<SinkEffect> effects = new();
+        foreach (var simMolec in sim.field_3823) {
+          SinkEffect effect = state.glyph.sinkData
+          .TrySink(simMolec, state.glyph.holeHexes, sim, part, state.moleculesInSequenceSank);
+          effects.Add(effect);
+        }
+        foreach (var effect in effects) { effect.UpdateState(state, sim, part); }
+        foreach (var effect in effects) { counterSystem.AddCountersSank(effect, part, state.glyph); }
+      }
+    } 
     // Produce 
     foreach (var KV in spawnerStates) {
       var state = KV.Value;
@@ -143,26 +162,6 @@ internal sealed record class SimState {
         state.BeginSpawning(rng, part, sim);
       }
     }
-    // Sink
-    foreach (var KV in spawnerStates) {
-      SpawnerState state = KV.Value;
-      var part = KV.Key;
-      var pss = PSS(seb, part);
-      if (when == PRE_CYCLE) {
-        state.currentlySinkingRaw = new();
-      }
-      else if (when == FIRST_HALF && !ExtransmutationsCompat.isIchorSuppressionActive) {
-        List<SinkEffect> effects = new();
-        foreach (var simMolec in sim.field_3823) {
-          SinkEffect effect = state.glyph.sinkData
-          .TrySink(simMolec, state.glyph.holeHexes, sim, part, state.moleculesInSequenceSank);
-          effects.Add(effect);
-        }
-        foreach (var effect in effects) { effect.UpdateState(state, sim, part); }
-        foreach (var effect in effects) { counterSystem.AddCountersSank(effect, part, state.glyph); }
-      }
-    }
-    // Dependent Outputs hackish 
   }
 
   internal bool IsExtrawnersSatisfied() =>

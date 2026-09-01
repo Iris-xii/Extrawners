@@ -33,7 +33,7 @@ internal sealed record CounterSystem {
   internal void WithdrawToProduce(SpawnerState state) {
     foreach (var withdrawal in data.withdrawals) {
       withdrawal.ProcessProducing(this, state);
-    } 
+    }
   }
   internal void AddCountersProducing(SpawnerGlyph glyphData, IEnumerable<Molecule> rawSpawnedMols) {
     foreach (var counterOnProduce in data.onExtrawnersProduce) {
@@ -49,24 +49,30 @@ internal sealed record CounterSystem {
   }
 }
 internal sealed record CounterWithdrawal {
-  private CounterWithdrawal() { }
+  private CounterWithdrawal(SpawnerGlyph target) { this.target = target; }
   private enum K { PRODUCE }
   private K k = K.PRODUCE;
   internal Dictionary<string, int> withdrawal = new();
   internal List<Molecule>? outputOnceIfProduceRaw = null;
+  internal SpawnerGlyph target;
   internal static CounterWithdrawal Producing(List<Molecule> toProduceOnce,
-  Dictionary<string, int> withdrawals) => new() {
+  Dictionary<string, int> withdrawals,
+  SpawnerGlyph spawnTarget) => new(spawnTarget) {
     withdrawal = withdrawals,
     k = K.PRODUCE,
     outputOnceIfProduceRaw = toProduceOnce,
   };
-  internal void ProcessProducing(CounterSystem sys, SpawnerState state) {
+  internal void ProcessProducing(CounterSystem sys, SpawnerState maybeTargetState) {
     if (k != K.PRODUCE) return;
+    if (maybeTargetState.glyph != target) return;
+    var targetState = maybeTargetState;
     var couldWithdraw = TryWithdraw(sys);
-    if (couldWithdraw) state.spawnQueueRaw = outputOnceIfProduceRaw.Concat(state.spawnQueueRaw).ToList();
-  } 
+    if (!couldWithdraw) return;
+    targetState.spawnQueueRaw = outputOnceIfProduceRaw.Concat(targetState.spawnQueueRaw).ToList();
+  }
   private bool TryWithdraw(CounterSystem sys) {
     foreach (var KV in withdrawal) {
+      if (!sys.counters.ContainsKey(KV.Key)) sys.counters[KV.Key] = 0;
       if (sys.counters[KV.Key] < KV.Value) { return false; }
     }
     foreach (var KV in withdrawal) { sys.counters[KV.Key] -= KV.Value; }

@@ -118,7 +118,7 @@ internal static class Presets {
         initialSpawnQueue = spawnAtBeginning is null ? new() : spawnAtBeginning, 
       };
     }
-    if (spawnOnOutput is not null) puzzleData.counterData = spawnOnOutput.ToCounterData();
+    if (spawnOnOutput is not null) puzzleData.counterData = spawnOnOutput.ToCounterDataSpawner(glyph);
   }
 
 
@@ -195,7 +195,7 @@ internal static class Presets {
         queueChooseMethod = disableRng? SpawnChooseMethod.RepeatingSeq() : SpawnChooseMethod.Random(),
       };
     }
-    if (dependentOutputs is not null) puzzleData.counterData = dependentOutputs.ToCounterData();
+    if (dependentOutputs is not null) puzzleData.counterData = dependentOutputs.ToCounterDataRandomInput();
   } 
 /*
   //                      *--- Allow normal outputs this time too?
