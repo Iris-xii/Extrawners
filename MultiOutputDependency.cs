@@ -24,13 +24,37 @@ internal struct MultiOutputDependency {
   internal MultiOutputDependency(int glyphIndex, int molIndex) { outputGlyphIndex = glyphIndex; outputMoleculeIndex = molIndex; }
 }
 internal static class MultiOutputDependencyExt {
-  internal static CounterData ToCounterDataRandomInput(this List<MultiOutputDependency> list) {
+  internal static CounterData ToCounterDataRandomInput(this List<MultiOutputDependency> list,
+  SpawnerGlyph thisGlyph,  
+  List<Molecule> produceList) {
+    int nextAvailableCounterName = 0;
+    int randomIdent = list.GetHashCode();
+    List<CounterOnProduce> oep = new() {};
+    List<CounterWithdrawal> withdrawals = new();
+    foreach(var mod in list) {
+      oep.Add(new() {
+        needGlyphIndexIfNotEmpty = new() {thisGlyph.partTypesIndex},
+        mustHaveBeenOneOfIfNotEmptyRaw = new() {produceList[mod.outputMoleculeIndex]},
+        ops = new() {
+          CounterOp.Sum($"{randomIdent}_{nextAvailableCounterName}",1)
+        }
+      });
+      withdrawals.Add(CounterWithdrawal.SinkTakeover(
+        mod.molecules.ToList(),
+        new() { { $"{randomIdent}_{nextAvailableCounterName}", 1 } },
+         mod.outputGlyphIndex,
+         forceTakeover: true
+      ));
+      nextAvailableCounterName += 1;
+    }
     return new CounterData() {
-      
+      onExtrawnersProduce = oep,
+      withdrawals = withdrawals
     };
   }
   internal static CounterData ToCounterDataSpawner(this List<MultiOutputDependency> list,SpawnerGlyph onTarget) {
     int nextAvailableCounterName = 0;
+    int randomIdent = list.GetHashCode();
     List<CounterOnSink> cos = new();
     List<CounterWithdrawal> withdrawals = new();
     foreach (var mod in list) {
@@ -38,11 +62,11 @@ internal static class MultiOutputDependencyExt {
         needGlyphIndexIfNotEmpty = new() { mod.outputGlyphIndex },
         mustHaveProgressedOnSink = true,
         ops = new() {
-          CounterOp.Sum($"{nextAvailableCounterName}",1)
+          CounterOp.Sum($"{randomIdent}_{nextAvailableCounterName}",1)
         }
       });
       withdrawals.Add(CounterWithdrawal.Producing(mod.molecules.ToList(),
-        new() { { $"{nextAvailableCounterName}", 1 } },
+        new() { { $"{randomIdent}_{nextAvailableCounterName}", 1 } },
         onTarget
         ));
 

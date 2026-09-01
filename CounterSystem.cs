@@ -35,6 +35,11 @@ internal sealed record CounterSystem {
       withdrawal.ProcessProducing(this, state);
     }
   }
+  internal void WithdrawToSink(SpawnerState state) {
+    foreach (var withdrawal in data.withdrawals) {
+      withdrawal.ProcessSinkTakeover(this, state);
+    }
+  }
   internal void AddCountersProducing(SpawnerGlyph glyphData, IEnumerable<Molecule> rawSpawnedMols) {
     foreach (var counterOnProduce in data.onExtrawnersProduce) {
       foreach (var rawMolec in rawSpawnedMols) {
@@ -49,26 +54,74 @@ internal sealed record CounterSystem {
   }
 }
 internal sealed record CounterWithdrawal {
-  private CounterWithdrawal(SpawnerGlyph target) { this.target = target; }
-  private enum K { PRODUCE }
+  private CounterWithdrawal(SpawnerGlyph target) { this.__target = target; }
+  private CounterWithdrawal(int glyphIndex) { this.__glyphIdx = glyphIndex; }
+  private enum K { PRODUCE, SINK_TAKEOVER }
   private K k = K.PRODUCE;
   internal Dictionary<string, int> withdrawal = new();
   internal List<Molecule>? outputOnceIfProduceRaw = null;
-  internal SpawnerGlyph target;
+  internal List<Molecule>? nowAcceptsTheseIfSinkTakover = null;
+  private bool sinkTakeoverForce = false;
+
+  private SpawnerGlyph? __target;
+  private int __glyphIdx = -1;
+  private bool IsTarget(SpawnerState state) {
+    if (__target is not null) {
+      return state.glyph == __target;
+    }
+    if (__glyphIdx >= 0) {
+      return state.glyph.partTypesIndex == __glyphIdx;
+    }
+    return false;
+  }
+
   internal static CounterWithdrawal Producing(List<Molecule> toProduceOnce,
   Dictionary<string, int> withdrawals,
   SpawnerGlyph spawnTarget) => new(spawnTarget) {
     withdrawal = withdrawals,
     k = K.PRODUCE,
     outputOnceIfProduceRaw = toProduceOnce,
+  }; 
+  internal static CounterWithdrawal Producing(List<Molecule> toProduceOnce,
+  Dictionary<string, int> withdrawals,
+  int glyphIndex) => new(glyphIndex) {
+    withdrawal = withdrawals,
+    k = K.PRODUCE,
+    outputOnceIfProduceRaw = toProduceOnce,
   };
-  internal void ProcessProducing(CounterSystem sys, SpawnerState maybeTargetState) {
+  internal static CounterWithdrawal SinkTakeover(List<Molecule> nowAcceptsThese,
+  Dictionary<string, int> withdrawals,
+  SpawnerGlyph sinkTarget,
+  bool forceTakeover = false) => new(sinkTarget) {
+    withdrawal = withdrawals,
+    k = K.SINK_TAKEOVER,
+    nowAcceptsTheseIfSinkTakover = nowAcceptsThese,
+    sinkTakeoverForce = forceTakeover,
+  };
+  internal static CounterWithdrawal SinkTakeover(List<Molecule> nowAcceptsThese,
+  Dictionary<string, int> withdrawals,
+  int glyphIndex,
+  bool forceTakeover = false) => new(glyphIndex) {
+    withdrawal = withdrawals,
+    k = K.SINK_TAKEOVER,
+    nowAcceptsTheseIfSinkTakover = nowAcceptsThese,
+    sinkTakeoverForce = forceTakeover,
+  };
+  internal void ProcessSinkTakeover(CounterSystem sys, SpawnerState state) {
+    if (k != K.SINK_TAKEOVER) return;
+    if (nowAcceptsTheseIfSinkTakover is null) return; 
+    if(!IsTarget(state)) return;
+    if(sinkTakeoverForce) state.forceTakeOverAlways = true;
+    var couldWithdraw = TryWithdraw(sys); 
+    if (!couldWithdraw) return;
+    state.takeoverSinkSequence.AddRange(nowAcceptsTheseIfSinkTakover);
+  }
+  internal void ProcessProducing(CounterSystem sys, SpawnerState state) {
     if (k != K.PRODUCE) return;
-    if (maybeTargetState.glyph != target) return;
-    var targetState = maybeTargetState;
+    if(!IsTarget(state)) return;
     var couldWithdraw = TryWithdraw(sys);
     if (!couldWithdraw) return;
-    targetState.spawnQueueRaw = outputOnceIfProduceRaw.Concat(targetState.spawnQueueRaw).ToList();
+    state.spawnQueueRaw = outputOnceIfProduceRaw.Concat(state.spawnQueueRaw).ToList();
   }
   private bool TryWithdraw(CounterSystem sys) {
     foreach (var KV in withdrawal) {

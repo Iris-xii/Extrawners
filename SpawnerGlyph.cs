@@ -38,6 +38,8 @@ internal sealed partial record class SpawnerGlyph {
   internal SinkData sinkData = new();
   /// <summary> Controls input/production of molecules </summary>
   internal ProduceData produceData = new();
+  internal bool forceTakeoverSequence = false;
+  
   internal IEnumerable<Molecule> HexesAndBondsFromMolec {
     set => HexesAndBondsRef(value, ref this.holeHexes, ref this.holeBonds);
   }  

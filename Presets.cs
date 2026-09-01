@@ -193,9 +193,9 @@ internal static class Presets {
       glyph.produceData = new() {
         repeatingRefillQueue = randomBag,
         queueChooseMethod = disableRng? SpawnChooseMethod.RepeatingSeq() : SpawnChooseMethod.Random(),
-      };
+      }; 
     }
-    if (dependentOutputs is not null) puzzleData.counterData = dependentOutputs.ToCounterDataRandomInput();
+    if (dependentOutputs is not null) puzzleData.counterData = dependentOutputs.ToCounterDataRandomInput(glyph,randomBag);
   } 
 /*
   //                      *--- Allow normal outputs this time too?

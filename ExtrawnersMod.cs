@@ -112,7 +112,7 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     if (maybePuzzleData is ExPuzzleData data) {
       if (data.glyphs.Count >= SpawnerGlyph.MAX_SPAWNERS) {
         throw new ArgumentOutOfRangeException($"Only {SpawnerGlyph.MAX_SPAWNERS} max spawner glyphs are allowed at a time. Bug me (Iris) to increase this if you need more.");
-      } 
+      }
       PuzzleDataSetupShared(data, solution);
       for (int i = 0; i < data.glyphs.Count; i++) {
         var origin = data.glyphs[i].origin;
@@ -187,25 +187,25 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
   }
 
 
+  internal static string DumpMol(Molecule m) {
+    var stringEnumerator = m.method_1100()
+    .Select(a => $".Atom(\"{a.Value.field_2275.QuintAtomType}\",{a.Key.Q},{a.Key.R})")
+    .Concat(
+      m.method_1101().Select(a =>
+      $".Bond((enum_126){(int)a.field_2186},{a.field_2187.Q},{a.field_2187.R},{a.field_2188.Q},{a.field_2188.R})")
+    );
+    return String.Join(String.Empty, stringEnumerator);
+  }
   private static void PrintMoleculesOnLoad(Puzzle puzzle) {
-    static string Dump(Molecule m) {
-      var stringEnumerator = m.method_1100()
-      .Select(a => $".Atom(\"{a.Value.field_2275.QuintAtomType}\",{a.Key.Q},{a.Key.R})")
-      .Concat(
-        m.method_1101().Select(a =>
-        $".Bond((enum_126){(int)a.field_2186},{a.field_2187.Q},{a.field_2187.R},{a.field_2188.Q},{a.field_2188.R})")
-      );
-      return String.Join(String.Empty, stringEnumerator);
-    }
     PuzzleInputOutput[] pInput = puzzle.field_2770;
     PuzzleInputOutput[] pOutput = puzzle.field_2771;
     for (int i = 0; i < pInput.Length; i++) {
       Log($"input #{i} @{puzzle.PuzzleId()}:\n" +
-      $"var input{i} = new Molecule(){Dump(pInput[i].field_2813)};\n");
+      $"var input{i} = new Molecule(){DumpMol(pInput[i].field_2813)};\n");
     }
     for (int i = 0; i < pOutput.Length; i++) {
       Log($"output #{i} @{puzzle.PuzzleId()}:\n" +
-      $"var output{i} = new Molecule(){Dump(pOutput[i].field_2813)};\n");
+      $"var output{i} = new Molecule(){DumpMol(pOutput[i].field_2813)};\n");
     }
   }
 
@@ -239,8 +239,8 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
   public Hook hook_sim_method_1825;
 
 #pragma warning disable CS0618 // Type or member is obsolete
-  private static bool OnSimMethod1825(On.Sim.orig_method_1825 orig, Sim s) { 
-    if(!STATE_CONTAINER.IsExtrawnersSatisfied()) {
+  private static bool OnSimMethod1825(On.Sim.orig_method_1825 orig, Sim s) {
+    if (!STATE_CONTAINER.IsExtrawnersSatisfied()) {
       return false;
     }
     return orig(s);

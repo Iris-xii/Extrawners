@@ -103,7 +103,7 @@ public static class ExtrawnersExt {
 
   public static Func<Molecule, Molecule, bool> molecMatchesExact =
       typeof(Sim).GetMethod("method_1844", BF.NonPublic | BF.Static).CreateDelegate<Func<Molecule, Molecule, bool>>();
-  public static bool MolecMatchesSinkAny(Molecule simMolecShifted, Molecule templateShifted) {
+  public static bool MolecMatchesSinkAny(Molecule simMolecShifted, Molecule templateShifted,Sim sim) {
     // Serializing them and de-serializing them is a bit jank but
     // I didn't feel like writing a clone function by hand and otherwise
     // there is weird action at a distance from the molecules referencing
@@ -122,6 +122,21 @@ public static class ExtrawnersExt {
     foreach (var hi in inBaseButNotGrabbed) {
       simTemplateMutated.method_1107(hi);
     }
+    // bond removal method_1114 
+    List<Pair<HexIndex, HexIndex>> removeTemplate = new();
+    foreach (var bnd in simTemplateMutated.method_1101()) {
+      removeTemplate.Add(new(bnd.field_2187, bnd.field_2188));
+    } 
+    foreach (var bnd in removeTemplate) {
+      Brimstone.API.RemoveBonds(sim,simTemplateMutated,bnd.Left,bnd.Right,false,false); 
+    }
+    List<Pair<HexIndex, HexIndex>> removeSim = new();
+    foreach (var bnd in simMutated.method_1101()) {
+      removeSim.Add(new(bnd.field_2187, bnd.field_2188));
+    }
+    foreach (var bnd in removeSim) {
+      Brimstone.API.RemoveBonds(sim,simMutated,bnd.Left,bnd.Right,false,false); 
+    }  
     return molecMatchesExact(simTemplateMutated, simMutated);
     //TODO: bond adjusting and improve this, it's just yoinked from Extransmissions.
   }
@@ -266,12 +281,12 @@ public static class ExtrawnersExt {
   }
   internal static void HexesAndBondsRef(IEnumerable<Molecule> molecules,
     ref HashSet<HexIndex> hexes,
-    ref HashSet<Pair<HexIndex, HexIndex>> sortaBonds) { 
+    ref HashSet<Pair<HexIndex, HexIndex>> sortaBonds) {
     foreach (var mol in molecules) {
       hexes.UnionWith(mol.method_1100().Select(a => a.Key));
       sortaBonds.UnionWith(mol.method_1101().Select(a => new Pair<HexIndex, HexIndex>(a.field_2187, a.field_2188)));
     }
-  } 
+  }
   internal struct FuckingComparer : IEqualityComparer<Molecule> {//I can't get Distinct to just take a lambda >:(
     public readonly bool Equals(Molecule x, Molecule y) => molecMatchesExact(x, y);
     public readonly int GetHashCode(Molecule obj) => obj.GetHashCode();

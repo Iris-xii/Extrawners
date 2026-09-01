@@ -32,13 +32,28 @@ internal sealed class SpawnerState {
   internal int validOutputsSank = 0;
 
   /// <summary> Queue of molecules this glyph wishes to spawn </summary>
-  internal List<Molecule> spawnQueueRaw = new(); 
+  internal List<Molecule> spawnQueueRaw = new();
 
   internal List<Molecule> currentlySpawningRaw = new();
   internal List<Molecule> currentlySinkingRaw = new();
 
+  /// <summary> When not empty, this totally takes over the normal sink behavior, requiring you fed it the sequence in order. </summary>
+  internal List<Molecule> takeoverSinkSequence = new();
+  internal bool forceTakeOverAlways = false; //hack
 
-  internal void RealizeSpawningQueue(Part part, Sim sim,out List<Molecule> didSpawnRaw) {
+  internal SinkEffect TrySink(
+      Molecule candidateSim,
+      Sim sim,
+      Part part) {
+    return glyph.sinkData.TrySinkInner(candidateSim, 
+    glyph.holeHexes, 
+    sim, 
+    part, 
+    moleculesInSequenceSank, 
+    ref takeoverSinkSequence,
+    forceTakeOverAlways);
+  }
+  internal void RealizeSpawningQueue(Part part, Sim sim, out List<Molecule> didSpawnRaw) {
     didSpawnRaw = new();
     List<Molecule> toRemove = new();
     foreach (var rawM in currentlySpawningRaw) {
@@ -76,6 +91,10 @@ internal sealed class SpawnerState {
     }
   }
   internal IEnumerable<Molecule> SinkPreview() {
+    if (takeoverSinkSequence.Count > 0) {
+      yield return takeoverSinkSequence[0];
+      yield break;
+    } else if(forceTakeOverAlways) {yield break;}
     foreach (var m in glyph.sinkData.progressMolecules) yield return m;
     var len = glyph.sinkData.sequencedProgressMolecules.Count;
     if (len > 0) {
@@ -89,6 +108,7 @@ internal sealed class SpawnerState {
   internal SpawnerState(SpawnerGlyph data) {
     this.glyph = data with { };
     this.PartTypesIndex = data.partTypesIndex;
+    this.forceTakeOverAlways = data.forceTakeoverSequence;
     spawnQueueRaw.AddRange(data.produceData.initialSpawnQueue);
   }
 }

@@ -123,40 +123,40 @@ internal sealed record class SimState {
         }
       }
       ExtransmutationsCompat.perDynGlyphSimSafeSpots[0] = ichorSafe.ToList();
-    } 
+    }
     // Sink
     foreach (var KV in spawnerStates) {
       SpawnerState state = KV.Value;
       var part = KV.Key;
       var pss = PSS(seb, part);
+      counterSystem.WithdrawToSink(state); //not affected by Extranscompat!
       if (when == PRE_CYCLE) {
         state.currentlySinkingRaw = new();
       }
       else if (when == FIRST_HALF && !ExtransmutationsCompat.isIchorSuppressionActive) {
         List<SinkEffect> effects = new();
         foreach (var simMolec in sim.field_3823) {
-          SinkEffect effect = state.glyph.sinkData
-          .TrySink(simMolec, state.glyph.holeHexes, sim, part, state.moleculesInSequenceSank);
+          SinkEffect effect = state.TrySink(simMolec, sim, part);
           effects.Add(effect);
         }
         foreach (var effect in effects) { effect.UpdateState(state, sim, part); }
         foreach (var effect in effects) { counterSystem.AddCountersSank(effect, part, state.glyph); }
       }
-    } 
+    }
     // Produce 
     foreach (var KV in spawnerStates) {
       var state = KV.Value;
       var part = KV.Key;
       var pss = PSS(seb, part);
       if (when == PRE_CYCLE && sim.Cycle() == 0) { //spawn starting molec
-        state.BeginSpawning(rng, part, sim, ignoreCooldown: true); 
-        state.RealizeSpawningQueue(part, sim,out var didSpawnQueue);
-        counterSystem.AddCountersProducing(state.glyph,didSpawnQueue);
+        state.BeginSpawning(rng, part, sim, ignoreCooldown: true);
+        state.RealizeSpawningQueue(part, sim, out var didSpawnQueue);
+        counterSystem.AddCountersProducing(state.glyph, didSpawnQueue);
       }
       else if (when.FireGlyph()) {
-        counterSystem.WithdrawToProduce(state); 
-        state.RealizeSpawningQueue(part, sim,out var didSpawnQueue);
-        counterSystem.AddCountersProducing(state.glyph,didSpawnQueue);
+        counterSystem.WithdrawToProduce(state);
+        state.RealizeSpawningQueue(part, sim, out var didSpawnQueue);
+        counterSystem.AddCountersProducing(state.glyph, didSpawnQueue);
       }
       else if (when == MID_CYCLE_B4_ANIM) {
         state.BeginSpawning(rng, part, sim);
