@@ -64,7 +64,7 @@ internal sealed record class SimState {
       foreach (var matchingSpawnerGlyph in matchingThisPart) {
         spawnerStates[anyP] = new(matchingSpawnerGlyph);
       }
-    } 
+    }
   }
 
   internal void RenderFn(int glyphIndex, Part part, Vector2 pos, SolutionEditorBase seb, class_195 renderer) {
@@ -122,15 +122,14 @@ internal sealed record class SimState {
         }
       }
       ExtransmutationsCompat.perDynGlyphSimSafeSpots[0] = ichorSafe.ToList();
-    } 
+    }
     // Produce
     foreach (var KV in spawnerStates) {
       var state = KV.Value;
       var part = KV.Key;
       var pss = PSS(seb, part);
-      Log($"WHEN: {when}; {string.Join(",",state.currentlySpawningRaw.Select(m=>$"{m.m.GetHashCode()};{m.beganOnCycle}").ToList()) }");
       if (when == PRE_CYCLE && sim.Cycle() == 0) { //spawn starting molec
-        state.BeginSpawning(rng,part,sim,ignoreCooldown: true);
+        state.BeginSpawning(rng, part, sim, ignoreCooldown: true);
         state.RealizeSpawningQueue(part, sim);
       }
       else if (when.FireGlyph()) {
@@ -139,7 +138,7 @@ internal sealed record class SimState {
       else if (when == WELL_AFTER_CYCLE) {
         state.BeginSpawning(rng, part, sim);
       }
-    } 
+    }
     // Sink
 
     // Other

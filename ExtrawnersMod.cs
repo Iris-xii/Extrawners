@@ -112,8 +112,7 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     if (maybePuzzleData is ExPuzzleData data) {
       if (data.glyphs.Count >= SpawnerGlyph.MAX_SPAWNERS) {
         throw new ArgumentOutOfRangeException($"Only {SpawnerGlyph.MAX_SPAWNERS} max spawner glyphs are allowed at a time. Bug me (Iris) to increase this if you need more.");
-      }
-      SpawnerGlyph.Cleanup();
+      } 
       PuzzleDataSetupShared(data, solution);
       for (int i = 0; i < data.glyphs.Count; i++) {
         var origin = data.glyphs[i].origin;
@@ -130,8 +129,9 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
 
   private static SimState STATE_CONTAINER = null!; // <- hackish
   internal static void PuzzleDataSetupShared(ExPuzzleData pData, Solution sol) {
+    SpawnerGlyph.Cleanup();
     STATE_CONTAINER = new(pData: pData, sol: sol);
-    SpawnerGlyph.glyphRenderer = STATE_CONTAINER.RenderFn;
+    SpawnerGlyph.glyphRenderer = (a, b, c, d, e) => STATE_CONTAINER.RenderFn(a, b, c, d, e);
     SpawnerGlyph.logicFn = (sim, when) => {
       if (sim.Cycle() == 0 && when == LogicWhen.PRE_CYCLE && sim.SEB().method_503() != enum_128.Stopped) {
         STATE_CONTAINER = new(STATE_CONTAINER.pData, sol); // <- reset
@@ -161,7 +161,6 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
       if (data.glyphs.Count >= SpawnerGlyph.MAX_SPAWNERS) {
         throw new ArgumentOutOfRangeException($"Only {SpawnerGlyph.MAX_SPAWNERS} max spawner glyphs are allowed at a time. Bug me (Iris) to increase this if you need more.");
       }
-      SpawnerGlyph.Cleanup();
       PuzzleDataSetupShared(data, solution);
     }
     orig(self, solution);

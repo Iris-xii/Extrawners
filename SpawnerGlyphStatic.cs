@@ -139,9 +139,9 @@ internal sealed partial record class SpawnerGlyph {
     PartSimState pss,
     Vector2 rendererPos,
     Part part,
-    IEnumerable<Molecule> animateMoleculesRaw ) { 
-    if (seb.method_503() == enum_128.Stopped) { DrawMol(rawM, pss, rendererPos, part); }
-    foreach (var animateMolecule in animateMoleculesRaw) { 
+    IEnumerable<Molecule> animateMoleculesRaw) {
+    if (seb.method_503() == enum_128.Stopped) { DrawMol(rawM, pss, rendererPos, part); } 
+    foreach (var animateMolecule in animateMoleculesRaw) {
       DrawMol(animateMolecule, pss, rendererPos, part, fractionOnBoard: seb.AnimTime());
     }
   }
