@@ -32,18 +32,20 @@ internal sealed class SpawnerState {
   internal int validOutputsSank = 0;
 
   /// <summary> Queue of molecules this glyph wishes to spawn </summary>
-  private List<Molecule> spawnQueueRaw = new();
+  internal List<Molecule> spawnQueueRaw = new(); 
 
   internal List<Molecule> currentlySpawningRaw = new();
   internal List<Molecule> currentlySinkingRaw = new();
 
 
-  internal void RealizeSpawningQueue(Part part, Sim sim) {
+  internal void RealizeSpawningQueue(Part part, Sim sim,out List<Molecule> didSpawnRaw) {
+    didSpawnRaw = new();
     List<Molecule> toRemove = new();
     foreach (var rawM in currentlySpawningRaw) {
       if (DoesNotOverlap(sim, part, rawM)) {
         var shifted = rawM.ShiftedBy(part);
         sim.AddMolecule(shifted);
+        didSpawnRaw.Add(rawM);
         if (glyph.fixDisjointMolecules) { Brimstone.API.ForceRecomputeBonds(rawM); }
       }
       toRemove.Add(rawM);
@@ -71,6 +73,13 @@ internal sealed class SpawnerState {
         }
       }
       break;
+    }
+  }
+  internal IEnumerable<Molecule> SinkPreview() {
+    foreach (var m in glyph.sinkData.progressMolecules) yield return m;
+    var len = glyph.sinkData.sequencedProgressMolecules.Count;
+    if (len > 0) {
+      yield return glyph.sinkData.sequencedProgressMolecules[moleculesInSequenceSank % len];
     }
   }
 

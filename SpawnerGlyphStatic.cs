@@ -220,7 +220,7 @@ internal sealed partial record class SpawnerGlyph {
         sim.AddMolecule(shifted);
       }
     }
-    else if (when == MID_CYCLE_BEFORE_ANIM) {
+    else if (when == MID_CYCLE_B4_ANIM) {
       if (DoesNotOverlap(sim, part, shifted)) {
         QueueMolAnimation(sim, rawM, pss, part);
       }

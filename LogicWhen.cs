@@ -12,19 +12,19 @@ using BF = System.Reflection.BindingFlags;
 
 using static LogicWhen;
 #nullable enable
-public enum LogicWhen {
+internal enum LogicWhen {
   PRE_CYCLE,
   FIRST_HALF,
   SECOND_HALF,
-  MID_CYCLE_BEFORE_ANIM,
+  MID_CYCLE_B4_ANIM,
 }
-public static class LogicWhenExt {
-  public static bool FireGlyph(this LogicWhen when) => when == FIRST_HALF || when == SECOND_HALF;
+internal static class LogicWhenExt {
+  internal static bool FireGlyph(this LogicWhen when) => when == FIRST_HALF || when == SECOND_HALF;
 } 
-public delegate void PartTypeModify(PartType[] partTypes, Solution s);
-public delegate void RenderFn(int glyphIndex,
+internal delegate void PartTypeModify(PartType[] partTypes, Solution s);
+internal delegate void RenderFn(int glyphIndex,
     Part part,
     Vector2 pos,
     SolutionEditorBase seb,
     class_195 renderer);
-public delegate void LogicFn(Sim sim, LogicWhen when);
+internal delegate void LogicFn(Sim sim, LogicWhen when);

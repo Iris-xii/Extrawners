@@ -118,7 +118,7 @@ internal static class Presets {
         initialSpawnQueue = spawnAtBeginning is null ? new() : spawnAtBeginning, 
       };
     }
-    if (spawnOnOutput is not null) puzzleData.multiOutputDependencyTemp[glyph.partTypesIndex] = spawnOnOutput;
+    if (spawnOnOutput is not null) puzzleData.counterData = spawnOnOutput.ToCounterData();
   }
 
 
@@ -195,7 +195,7 @@ internal static class Presets {
         queueChooseMethod = disableRng? SpawnChooseMethod.RepeatingSeq() : SpawnChooseMethod.Random(),
       };
     }
-    if (dependentOutputs is not null) puzzleData.multiOutputDependencyTemp[glyph.partTypesIndex] = dependentOutputs;
+    if (dependentOutputs is not null) puzzleData.counterData = dependentOutputs.ToCounterData();
   } 
 /*
   //                      *--- Allow normal outputs this time too?

@@ -17,18 +17,9 @@ using Quintessential;
 using static LogicWhen;
 #nullable enable
 
-/// <summary> Spawns `molecules` when defined output swallows a molecule. </summary>
-internal struct MultiOutputDependency {
-  internal int outputGlyphIndex = 0;
-  internal int outputMoleculeIndex = 0; // <- somewhat dubious
-  internal Molecule[] molecules = new Molecule[0];
-  internal MultiOutputDependency(int glyphIndex, int molIndex) { outputGlyphIndex = glyphIndex; outputMoleculeIndex = molIndex; }
-}
-
 internal sealed record class ExPuzzleData {
   internal List<SpawnerGlyph> glyphs = new();
-  /// <summary> Key is spawner idx. </summary>
-  internal Dictionary<int, List<MultiOutputDependency>> multiOutputDependencyTemp = new(); // TODO: Find a way to represent this that doesn't suck as much
+  internal CounterData counterData = new();
 
   internal SpawnerGlyph NewGlyph() {
     int next = glyphs.Count;
@@ -50,11 +41,13 @@ internal sealed record class ExPuzzleData {
 internal sealed record class SimState {
   internal readonly ExPuzzleData pData;
   internal Dictionary<Part, SpawnerState> spawnerStates;
+  internal CounterSystem counterSystem;
   internal Random rng;
 
   internal SimState(ExPuzzleData pData, Solution sol) {
     pData.PreparePartTypes();
     this.pData = pData;
+    this.counterSystem = new(pData.counterData);
     this.spawnerStates = new();
     this.rng = new(sol.Puzzle().field_2766.GetHashCode());
     foreach (var anyP in sol.PartList()) {
@@ -87,9 +80,15 @@ internal sealed record class SimState {
           animateMoleculesRaw: spawnerState.currentlySpawningRaw);
       }
       if (data.drawOutputRawMolecules.Count > 0) {
-        //TODO: Accurate preview
+        List<Molecule> preview;
+        if (seb.method_503() == enum_128.Stopped) {
+          preview = data.drawOutputRawMolecules;
+        }
+        else {
+          preview = spawnerState.SinkPreview().ToList();
+        }
         SpawnerGlyph.DrawMolAsIfOutput(
-          data.drawOutputRawMolecules[(int)Math.Floor(seb.AccumulatedTime() % data.drawOutputRawMolecules.Count)],
+          preview[(int)Math.Floor(seb.AccumulatedTime() % preview.Count)],
           seb, pss, renderer, pos, part,
           animateMoleculesRaw: spawnerState.currentlySinkingRaw,
           doOutputText: data.requiredProducts > 0,
@@ -125,42 +124,47 @@ internal sealed record class SimState {
       }
       ExtransmutationsCompat.perDynGlyphSimSafeSpots[0] = ichorSafe.ToList();
     }
-    // Produce
+    // Produce 
     foreach (var KV in spawnerStates) {
       var state = KV.Value;
       var part = KV.Key;
       var pss = PSS(seb, part);
       if (when == PRE_CYCLE && sim.Cycle() == 0) { //spawn starting molec
-        state.BeginSpawning(rng, part, sim, ignoreCooldown: true);
-        state.RealizeSpawningQueue(part, sim);
+        state.BeginSpawning(rng, part, sim, ignoreCooldown: true); 
+        state.RealizeSpawningQueue(part, sim,out var didSpawnQueue);
+        counterSystem.AddCountersProducing(state.glyph,didSpawnQueue);
       }
       else if (when.FireGlyph()) {
-        state.RealizeSpawningQueue(part, sim);
+        counterSystem.WithdrawToProduce(state); 
+        state.RealizeSpawningQueue(part, sim,out var didSpawnQueue);
+        counterSystem.AddCountersProducing(state.glyph,didSpawnQueue);
       }
-      else if (when == MID_CYCLE_BEFORE_ANIM) {
+      else if (when == MID_CYCLE_B4_ANIM) {
         state.BeginSpawning(rng, part, sim);
       }
     }
     // Sink
-    foreach(var KV in spawnerStates) {
+    foreach (var KV in spawnerStates) {
       SpawnerState state = KV.Value;
       var part = KV.Key;
-      var pss = PSS(seb, part); 
-      if(when == PRE_CYCLE) {
+      var pss = PSS(seb, part);
+      if (when == PRE_CYCLE) {
         state.currentlySinkingRaw = new();
       }
-      else if(when.FireGlyph() && !ExtransmutationsCompat.isIchorSuppressionActive) {
+      else if (when == FIRST_HALF && !ExtransmutationsCompat.isIchorSuppressionActive) {
         List<SinkEffect> effects = new();
         foreach (var simMolec in sim.field_3823) {
-          SinkEffect effect = state.glyph.sinkData.TrySink(simMolec,state.glyph.holeHexes,sim,part,state.moleculesInSequenceSank);
+          SinkEffect effect = state.glyph.sinkData
+          .TrySink(simMolec, state.glyph.holeHexes, sim, part, state.moleculesInSequenceSank);
           effects.Add(effect);
         }
-        foreach(var effect in effects) {effect.UpdateState(state,sim,part);}
+        foreach (var effect in effects) { effect.UpdateState(state, sim, part); }
+        foreach (var effect in effects) { counterSystem.AddCountersSank(effect, part, state.glyph); }
       }
-    } 
-    // Other
+    }
+    // Dependent Outputs hackish 
   }
 
   internal bool IsExtrawnersSatisfied() =>
-    spawnerStates.All(KV => KV.Value.IsSatisfied()); 
+    spawnerStates.All(KV => KV.Value.IsSatisfied());
 }

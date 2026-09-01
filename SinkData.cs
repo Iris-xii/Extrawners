@@ -31,8 +31,9 @@ internal record struct SinkEffect {
     new() { k = K.ACCEPT, targetSim = simM, advanceSeq = true };
   internal static SinkEffect SinkNoProgress(Molecule simM) => new() { k = K.SINK_NO_PROGRESS, targetSim = simM };
   internal static SinkEffect SinkCrash(Molecule simM) => new() { k = K.SINK_CRASH, targetSim = simM };
-  private bool ShouldSink() => k != K.IGNORE;
-  private bool ShouldProgress() => k == K.ACCEPT;
+  internal bool ShouldSink() => k != K.IGNORE;
+  internal bool ShouldProgress() => k == K.ACCEPT;
+  internal Molecule? MaybeSankMolecule() => targetSim;
   internal void UpdateState(SpawnerState state,Sim sim,Part part) {
     var seb = sim.SEB();
     if(ShouldSink() && targetSim is not null) {
@@ -48,27 +49,29 @@ internal record struct SinkEffect {
   }
 }
 internal sealed record SinkData() {
-  internal List<Molecule> progressMolecules = new();
+  internal List<Molecule> progressMolecules = new(); 
   internal List<Molecule> noProgressMolecules = new();
   internal List<Molecule> crashMolecules = new();
   internal List<Molecule> sequencedProgressMolecules = new(); // <- suspiciously specific
   internal SinkEffect.K resultWhenFitButNoMatch = SinkEffect.K.IGNORE;
 
-  internal SinkEffect TrySink(Molecule candidateSim,
+  internal SinkEffect TrySink(
+      Molecule candidateSim, 
       IEnumerable<HexIndex> holeHexes,
       Sim sim,
       Part part,
-      int moleculesSunkFromSequence = -1) {
-    if (moleculesSunkFromSequence >= 0 && sequencedProgressMolecules.Count > 0) {
+      int moleculesSankFromSequence = -1 ) {
+    if (moleculesSankFromSequence >= 0 && sequencedProgressMolecules.Count > 0) {
       var len = sequencedProgressMolecules.Count;
-      var templateShifted = sequencedProgressMolecules[moleculesSunkFromSequence % len].ShiftedBy(part);
+      var templateShifted = sequencedProgressMolecules[moleculesSankFromSequence % len].ShiftedBy(part);
       if (molecMatchesExact(candidateSim, templateShifted) && !sim.MoleculeHeld(candidateSim)) {
         return SinkEffect.AcceptAdvanceSeq(candidateSim);
       }
     }
-    foreach (var rawM in progressMolecules) {
+    for (int i = 0; i < progressMolecules.Count; i++) {
+      Molecule  rawM = progressMolecules[i];
       var templateShifted = rawM.ShiftedBy(part);
-      if (molecMatchesExact(candidateSim, templateShifted) && !sim.MoleculeHeld(candidateSim)) {
+      if (molecMatchesExact(candidateSim, templateShifted) && !sim.MoleculeHeld(candidateSim)) { 
         return SinkEffect.Accept(candidateSim);
       }
     }

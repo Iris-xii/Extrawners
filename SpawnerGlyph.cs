@@ -40,8 +40,7 @@ internal sealed partial record class SpawnerGlyph {
   internal ProduceData produceData = new();
   internal IEnumerable<Molecule> HexesAndBondsFromMolec {
     set => HexesAndBondsRef(value, ref this.holeHexes, ref this.holeBonds);
-  }
-
+  }  
   internal IEnumerable<HexIndex> CollisionHexes() => holeHexes;
   internal SpawnerGlyph(int partTypesIndex) { //I miss `required`
     this.partTypesIndex = partTypesIndex;
