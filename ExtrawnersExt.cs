@@ -21,65 +21,76 @@ using static ExtrawnersMod;
 
 #nullable enable
 internal static class ExtrawnersExt {
-  public static class BondKinds {
-    public const enum_126 normal = enum_126.Standard;
-    public const enum_126 triplex_ogr = enum_126.Prisma0 | enum_126.Prisma1 | enum_126.Prisma2;
-    public const enum_126 triplex_o = enum_126.Prisma0;
-    public const enum_126 triplex_g = enum_126.Prisma1;
-    public const enum_126 triplex_r = enum_126.Prisma2;
-    public const enum_126 triplex_og = enum_126.Prisma0 | enum_126.Prisma1;
-    public const enum_126 triplex_or = enum_126.Prisma0 | enum_126.Prisma2;
-    public const enum_126 triplex_gr = enum_126.Prisma1 | enum_126.Prisma2;
+  internal static class BondKinds {
+    internal const enum_126 normal = enum_126.Standard;
+    internal const enum_126 triplex_ogr = enum_126.Prisma0 | enum_126.Prisma1 | enum_126.Prisma2;
+    internal const enum_126 triplex_o = enum_126.Prisma0;
+    internal const enum_126 triplex_g = enum_126.Prisma1;
+    internal const enum_126 triplex_r = enum_126.Prisma2;
+    internal const enum_126 triplex_og = enum_126.Prisma0 | enum_126.Prisma1;
+    internal const enum_126 triplex_or = enum_126.Prisma0 | enum_126.Prisma2;
+    internal const enum_126 triplex_gr = enum_126.Prisma1 | enum_126.Prisma2;
   }
 
   /// <exception cref="ArgumentException"></exception>
-  public static Molecule Atom(this Molecule m, string atomName, HexIndex pos) {
+  internal static Molecule Atom(this Molecule m, string atomName, HexIndex pos) {
     var atomType = MaybeAtomTypeByName(atomName) ?? throw new ArgumentException($"Atom name \"{atomName}\" wasn't found.");
     m.method_1105(new(atomType), pos);
     return m;
   }
   /// <exception cref="ArgumentException"></exception>
-  public static Molecule Atom(this Molecule m, string atomName, int a, int b) => m.Atom(atomName, new(a, b));
-  public static Molecule Atom(this Molecule m, AtomType atomType, int a, int b) {
+  internal static Molecule Atom(this Molecule m, string atomName, int a, int b) => m.Atom(atomName, new(a, b));
+  internal static Molecule Atom(this Molecule m, AtomType atomType, int a, int b) {
     m.method_1105(new(atomType), new(a, b));
     return m;
   }
 
-  public static Molecule Bond(this Molecule m, enum_126 kind, HexIndex a, HexIndex b) {
+  internal static Molecule Bond(this Molecule m, enum_126 kind, HexIndex a, HexIndex b) {
     m.method_1112(kind, a, b, new());
     return m;
   }
-  public static Molecule Bond(this Molecule m, enum_126 kind, int a, int b, int c, int d) => m.Bond(kind, new(a, b), new(c, d));
+  internal static Molecule Bond(this Molecule m, enum_126 kind, int a, int b, int c, int d) => m.Bond(kind, new(a, b), new(c, d));
 
-  public static PartSimState PSS(SolutionEditorBase seb, Part part) => seb.method_507().method_481(part);
-  public static HexRotation PartRotation(PartSimState pss) => pss.field_2726;
-  public static HexRotation PartRotation(SolutionEditorBase seb, Part part) => seb.method_507().method_481(part).field_2726;
-  public static Solution Solution(this SolutionEditorBase seb) => seb.method_502();
-  public static Puzzle Puzzle(this Solution sol) => sol.method_1934();
-  public static string PuzzleId(this Puzzle puzzle) => puzzle.field_2766;
-  public static PartType Type(this Part part) => part.method_1159();
-  public static float AnimTime(this SolutionEditorBase seb) => seb.method_504();
-  public static float AccumulatedTime(this SolutionEditorBase seb) => seb.method_509();
-  public static enum_128 IsRunning(this SolutionEditorBase seb) => seb.method_503();
+  internal static PartSimState PSS(SolutionEditorBase seb, Part part) => seb.method_507().method_481(part);
+  internal static HexRotation PartRotation(PartSimState pss) => pss.field_2726;
+  internal static HexRotation PartRotation(SolutionEditorBase seb, Part part) => seb.method_507().method_481(part).field_2726;
+  internal static Solution Solution(this SolutionEditorBase seb) => seb.method_502();
+  internal static Puzzle Puzzle(this Solution sol) => sol.method_1934();
+  internal static string PuzzleId(this Puzzle puzzle) => puzzle.field_2766;
+  internal static PartType Type(this Part part) => part.method_1159();
+  internal static float AnimTime(this SolutionEditorBase seb) => seb.method_504();
+  internal static float AccumulatedTime(this SolutionEditorBase seb) => seb.method_509();
+  internal static enum_128 IsRunning(this SolutionEditorBase seb) => seb.method_503();
 
-  public static SolutionEditorBase SEB(this Sim sim) => sim.field_3818;
-  public static void AddMolecule(this Sim sim, Molecule m) => sim.field_3823.Add(m);
-  public static bool RemoveMolecule(this Sim sim, Molecule m) => sim.field_3823.Remove(m);
-  public static Molecule ShiftedBy(this Molecule m, Part part) => m.ShiftedBy(part.method_1161(), part.method_1163());
-  public static Molecule ShiftedBy(this Molecule m, HexIndex shift, HexRotation rot) => m.method_1115(rot).method_1117(shift);
-  public static Molecule SimCoordsToPart(this Molecule m, Part part) => m.method_1117(-part.method_1161()).method_1115(part.method_1163().Negative());
-  public static List<Part> PartList(this Solution solution) => solution.field_3919;
-  public static List<Part> PartList(this Sim sim) => sim.field_3818.method_502().field_3919;
-  public static int Cycle(this Sim sim) => sim.method_1818();
+  internal static SolutionEditorBase SEB(this Sim sim) => sim.field_3818;
+  internal static void AddMolecule(this Sim sim, Molecule m) => sim.field_3823.Add(m);
+  internal static bool RemoveMolecule(this Sim sim, Molecule m) => sim.field_3823.Remove(m);
+  internal static Molecule ShiftedBy(this Molecule m, Part part) => m.ShiftedBy(part.method_1161(), part.method_1163());
+  internal static Molecule ShiftedBy(this Molecule m, HexIndex shift, HexRotation rot) => m.method_1115(rot).method_1117(shift);
+  internal static Molecule SimCoordsToPart(this Molecule m, Part part) => m.method_1117(-part.method_1161()).method_1115(part.method_1163().Negative());
+  internal static List<Part> PartList(this Solution solution) => solution.field_3919;
+  internal static List<Part> PartList(this Sim sim) => sim.field_3818.method_502().field_3919;
+  internal static int Cycle(this Sim sim) => sim.method_1818();
 
-  public static void SetHexesToMol(this PartType t, Molecule m) =>
+  internal static void SetHexesToMol(this PartType t, Molecule m) =>
     t.field_1540 = m.method_1100().Select(a => a.Key).ToArray();
-  public static void SetHexesToAllMols(this PartType t, IEnumerable<Molecule> mls) =>
+  internal static void SetHexesToAllMols(this PartType t, IEnumerable<Molecule> mls) =>
     t.field_1540 = mls.SelectMany(m => m.method_1100().Keys).Distinct().ToArray();
-  public static void SetName(this PartType t, string name) =>
+  internal static void SetName(this PartType t, string name) =>
     t.field_1529 = class_134.method_253(name, string.Empty);
-  public static void SetDescription(this PartType t, string desc) =>
+  internal static void SetDescription(this PartType t, string desc) =>
     t.field_1530 = class_134.method_253(desc, string.Empty);
+
+  internal static AtomType AsQuintAtomType(this string s) { 
+      AtomType atomType;
+      try {
+        atomType = ExtrawnersMod.VanillaAtomTypes.Concat(QApi.ModAtomTypes)
+       .Where(a => a.QuintAtomType == s)
+       .First();
+      }
+      catch (Exception) { atomType = VanillaAtoms.salt; }
+      return atomType;
+  }
  
   internal static void DrawMol(Molecule rawM,
       PartSimState pss,
@@ -99,16 +110,16 @@ internal static class ExtrawnersExt {
       shadowStrength /*shadow str*/, light /*light*/, null);
   }
   [Obsolete]
-  public static void SetAsOutput(this PartType t) => t.SetDynState<bool>("output", true);
+  internal static void SetAsOutput(this PartType t) => t.SetDynState<bool>("output", true);
 
 
-  public static void SetRequiredOutputs(this Part part, int required) => part_method_1170(part, required);
-  public static int GetRequiredOutputs(this Part part) => part.method_1169();
-  public static void AddToCurrentOutputs(this PartSimState pss, int add, int limit) {
+  internal static void SetRequiredOutputs(this Part part, int required) => part_method_1170(part, required);
+  internal static int GetRequiredOutputs(this Part part) => part.method_1169();
+  internal static void AddToCurrentOutputs(this PartSimState pss, int add, int limit) {
     if ((pss.field_2730 + 1) <= limit) { pss.field_2730 += add; }
   }
-  public static void SetCurrentOutputs(this PartSimState pss, int current) => pss.field_2730 = current;
-  public static int CurrentOutputs(this PartSimState pss) => pss.field_2730;
+  internal static void SetCurrentOutputs(this PartSimState pss, int current) => pss.field_2730 = current;
+  internal static int CurrentOutputs(this PartSimState pss) => pss.field_2730;
 
   internal static Solution m1817(this Sim sim) => sim.field_3818.method_502();
   internal static Action<Part, int> part_method_1170 =
@@ -118,9 +129,9 @@ internal static class ExtrawnersExt {
   internal static Func<Sim.class_403, HexIndex, bool> c_method_1860 =
     typeof(Sim.class_403).GetMethod("method_1860", BF.NonPublic | BF.Instance).CreateDelegate<Func<Sim.class_403, HexIndex, bool>>();
 
-  public static Func<Molecule, Molecule, bool> molecMatchesExact =
+  internal static Func<Molecule, Molecule, bool> molecMatchesExact =
       typeof(Sim).GetMethod("method_1844", BF.NonPublic | BF.Static).CreateDelegate<Func<Molecule, Molecule, bool>>();
-  public static bool MolecMatchesSinkAny(Molecule simMolecShifted, Molecule templateShifted,Sim sim) {
+  internal static bool MolecMatchesSinkAny(Molecule simMolecShifted, Molecule templateShifted,Sim sim) {
     // Serializing them and de-serializing them is a bit jank but
     // I didn't feel like writing a clone function by hand and otherwise
     // there is weird action at a distance from the molecules referencing
@@ -158,14 +169,14 @@ internal static class ExtrawnersExt {
     //TODO: bond adjusting and improve this, it's just yoinked from Extransmissions.
   }
 
-  public static bool MoleculeHeld(this Sim sim, Molecule molec) {
+  internal static bool MoleculeHeld(this Sim sim, Molecule molec) {
     return sim.HeldGrippers.Any((gripper) => {
       var pss = PSS(sim.SEB(), gripper);
       var maybeHolding = pss.field_2729;
       return maybeHolding.method_1085() && (maybeHolding.method_1087() == molec);
     });
   }
-  public static bool DoesNotOverlap(Sim sim, Part item2, Molecule shifted,
+  internal static bool DoesNotOverlap(Sim sim, Part item2, Molecule shifted,
   HashSet<HexIndex>? alreadyOccupiedAbsolute = null) {
     HashSet<HexIndex> hashSet = alreadyOccupiedAbsolute ?? new();
     foreach (Molecule item in sim.field_3823) {
@@ -180,14 +191,14 @@ internal static class ExtrawnersExt {
     return false;
   }
 
-  public static void method_1854_crash(this Sim s, string param_5403, HexIndex param_5404, HexIndex param_5405) {
+  internal static void method_1854_crash(this Sim s, string param_5403, HexIndex param_5404, HexIndex param_5405) {
     Vector2 vector = class_187.field_1742.method_492(param_5404);
     Vector2 vector2 = class_187.field_1742.method_492(param_5405);
     s.field_3818.method_518(0f, param_5403, new Vector2[2] { vector, vector2 });
   }
 
 
-  public static T GetDynStateOrDef<T>(this PartSimState pss, string entry) where T : new() {
+  internal static T GetDynStateOrDef<T>(this PartSimState pss, string entry) where T : new() {
     DynamicData dyn_pss = new(pss);
     object? maybeState = dyn_pss.Get(entry);
     T state;
@@ -201,7 +212,7 @@ internal static class ExtrawnersExt {
     return state;
   }
   [Obsolete("DynState with PartType is too easy to get wrong")]
-  public static T GetDynStateOrDef<T>(this PartType pt, string entry) where T : new() {
+  internal static T GetDynStateOrDef<T>(this PartType pt, string entry) where T : new() {
     DynamicData dyn_pss = new(pt);
     object? maybeState = dyn_pss.Get(entry);
     T state;
@@ -215,7 +226,7 @@ internal static class ExtrawnersExt {
     return state;
   }
   [Obsolete("DynState with PartType is too easy to get wrong")]
-  public static T? GetDynStateOrNull<T>(this PartType pt, string entry) where T : class? {
+  internal static T? GetDynStateOrNull<T>(this PartType pt, string entry) where T : class? {
     DynamicData dyn_pss = new(pt);
     object? maybeState = dyn_pss.Get(entry);
     T state;
@@ -227,7 +238,7 @@ internal static class ExtrawnersExt {
     }
     return state;
   }
-  public static T? GetDynStateOrNull<T>(this PartSimState pss, string entry) where T : class? {
+  internal static T? GetDynStateOrNull<T>(this PartSimState pss, string entry) where T : class? {
     DynamicData dyn_pss = new(pss);
     object? maybeState = dyn_pss.Get(entry);
     T state;
@@ -239,16 +250,16 @@ internal static class ExtrawnersExt {
     }
     return state;
   }
-  public static void SetDynState<T>(this PartSimState pss, string entry, T to) {
+  internal static void SetDynState<T>(this PartSimState pss, string entry, T to) {
     DynamicData dyn_pss = new(pss);
     dyn_pss.Set(entry, to);
   }
   [Obsolete("DynState with PartType is too easy to get wrong")]
-  public static void SetDynState<T>(this PartType pt, string entry, T to) {
+  internal static void SetDynState<T>(this PartType pt, string entry, T to) {
     DynamicData dyn_pss = new(pt);
     dyn_pss.Set(entry, to);
   }
-  public static ExtrawnersDynState GetDefaultDynState(this PartSimState pss) => pss.GetDynStateOrDef<ExtrawnersDynState>("defaultState");
+  internal static ExtrawnersDynState GetDefaultDynState(this PartSimState pss) => pss.GetDynStateOrDef<ExtrawnersDynState>("defaultState");
 
   /// <summary> A handful of things utilize a few 'dynamic' states by default if nothing else
   /// is specified. <br></br><br></br>
@@ -267,13 +278,13 @@ internal static class ExtrawnersExt {
       state.animatingMolecule = null;
     }
   }
-  public record class ExtrawnersDynState {
-    public bool simStarted = false;
-    public Molecule? animatingMolecule = null;
-    public bool isOutput = false;
+  internal record class ExtrawnersDynState {
+    internal bool simStarted = false;
+    internal Molecule? animatingMolecule = null;
+    internal bool isOutput = false;
   }
 
-  public static void Play(this Sound sound, SolutionEditorBase seb) {
+  internal static void Play(this Sound sound, SolutionEditorBase seb) {
     sound.field_4062 = false;
     sound.method_28(seb.method_506());
   }

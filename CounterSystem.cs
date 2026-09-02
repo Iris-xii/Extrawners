@@ -65,6 +65,7 @@ internal sealed record CounterWithdrawal {
 
   private SpawnerGlyph? __target;
   private int __glyphIdx = -1;
+  private int __queueIdx = 0;
   private bool IsTarget(SpawnerState state) {
     if (__target is not null) {
       return state.glyph == __target;
@@ -77,16 +78,20 @@ internal sealed record CounterWithdrawal {
 
   internal static CounterWithdrawal Producing(List<Molecule> toProduceOnce,
   Dictionary<string, int> withdrawals,
+  int onQueueIndex,
   SpawnerGlyph spawnTarget) => new(spawnTarget) {
     withdrawal = withdrawals,
     k = K.PRODUCE,
+    __queueIdx = onQueueIndex,
     outputOnceIfProduceRaw = toProduceOnce,
   }; 
   internal static CounterWithdrawal Producing(List<Molecule> toProduceOnce,
   Dictionary<string, int> withdrawals,
+  int onQueueIndex,
   int glyphIndex) => new(glyphIndex) {
     withdrawal = withdrawals,
     k = K.PRODUCE,
+    __queueIdx = onQueueIndex,
     outputOnceIfProduceRaw = toProduceOnce,
   };
   internal static CounterWithdrawal SinkTakeover(List<Molecule> nowAcceptsThese,
@@ -121,7 +126,7 @@ internal sealed record CounterWithdrawal {
     if(!IsTarget(state)) return;
     var couldWithdraw = TryWithdraw(sys);
     if (!couldWithdraw) return;
-    state.spawnQueueRaw = outputOnceIfProduceRaw.Concat(state.spawnQueueRaw).ToList();
+    state.spawningList.Get(__queueIdx).Concat(outputOnceIfProduceRaw);
   }
   private bool TryWithdraw(CounterSystem sys) {
     foreach (var KV in withdrawal) {

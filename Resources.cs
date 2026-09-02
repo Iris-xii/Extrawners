@@ -20,19 +20,19 @@ using VanillaAtoms = Brimstone.API.VanillaAtoms;
 using BF = System.Reflection.BindingFlags;
 using static ExtrawnersExt;
 
-public static class Resources {
-  public static readonly Texture pipe_ring = normal.ring;
-  public static readonly Texture pipe_base = normal.bg;
-  public static readonly Texture pipe_bond = normal.bond;
-  public static readonly Texture blue_pipe_ring = blue.ring;
-  public static readonly Texture blue_pipe_base = blue.bg;
-  public static readonly Texture blue_pipe_bond = blue.bond;
-  public static readonly Texture crimson_pipe_ring = crimson.ring;
-  public static readonly Texture crimson_pipe_base = crimson.bg;
-  public static readonly Texture crimson_pipe_bond = crimson.bond;
-  public static readonly Texture spawner_pipe_ring = spawner.ring;
-  public static readonly Texture spawner_pipe_base = spawner.bg;
-  public static readonly Texture spawner_pipe_bond = spawner.bond;
+internal static class Resources {
+  internal static readonly Texture pipe_ring = normal.ring;
+  internal static readonly Texture pipe_base = normal.bg;
+  internal static readonly Texture pipe_bond = normal.bond;
+  internal static readonly Texture blue_pipe_ring = blue.ring;
+  internal static readonly Texture blue_pipe_base = blue.bg;
+  internal static readonly Texture blue_pipe_bond = blue.bond;
+  internal static readonly Texture crimson_pipe_ring = crimson.ring;
+  internal static readonly Texture crimson_pipe_base = crimson.bg;
+  internal static readonly Texture crimson_pipe_bond = crimson.bond;
+  internal static readonly Texture spawner_pipe_ring = spawner.ring;
+  internal static readonly Texture spawner_pipe_base = spawner.bg;
+  internal static readonly Texture spawner_pipe_bond = spawner.bond;
   internal static Texture[] genericBase = new Texture[] {
     class_235.method_615("textures/i_give_up/0"),
     class_235.method_615("textures/i_give_up/1"),
@@ -52,29 +52,29 @@ public static class Resources {
     class_235.method_615("textures/i_give_up/15"),
   };
 
-  public static readonly HoleGlyph normal = new() {
+  internal static readonly HoleGlyph normal = new() {
     ring = class_235.method_615("textures/parts/pipe_ring"),
     bg = class_235.method_615("textures/parts/pipe_base"),
     bond = class_235.method_615("textures/parts/pipe_bond"),
   };
-  public static readonly HoleGlyph blue = new() {
+  internal static readonly HoleGlyph blue = new() {
     ring = class_235.method_615("textures/ioglyphs/blue_pipe_ring"),
     bg = class_235.method_615("textures/ioglyphs/blue_pipe_base"),
     bond = class_235.method_615("textures/ioglyphs/blue_pipe_bond"),
   };
-  public static readonly HoleGlyph crimson = new() {
+  internal static readonly HoleGlyph crimson = new() {
     ring = class_235.method_615("textures/ioglyphs/crimson_pipe_ring"),
     bg = class_235.method_615("textures/ioglyphs/crimson_pipe_base"),
     bond = class_235.method_615("textures/ioglyphs/crimson_pipe_bond"),
   };
-  public static readonly HoleGlyph spawner = new() {
+  internal static readonly HoleGlyph spawner = new() {
     ring = class_235.method_615("textures/ioglyphs/spawner_pipe_ring"),
     bg = class_235.method_615("textures/ioglyphs/spawner_pipe_base"),
     bond = class_235.method_615("textures/ioglyphs/spawner_pipe_bond"),
   };
-  public record struct HoleGlyph {
-    public Texture ring;
-    public Texture bg; //`base` but it's a keyword, so.
-    public Texture bond;
+  internal record struct HoleGlyph {
+    internal Texture ring;
+    internal Texture bg; //`base` but it's a keyword, so.
+    internal Texture bond;
   }
 }

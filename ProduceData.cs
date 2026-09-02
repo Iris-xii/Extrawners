@@ -34,7 +34,7 @@ internal record struct SpawnChooseMethod() {
       return mlist[indexChosen];
     }
     else if (k == K.RANDOM) {
-      indexChosen = rng.Next(0, mlist.Count); 
+      indexChosen = rng.Next(0, mlist.Count);
       return mlist[indexChosen];
     }
     return null;
@@ -42,6 +42,9 @@ internal record struct SpawnChooseMethod() {
 }
 
 internal sealed record ProduceData() {
+  internal Dictionary<int,ProduceDataPerSpawnList> perSpawnListProduceData = new(); 
+}
+internal sealed record  ProduceDataPerSpawnList { 
   /// <summary> Fill the spawn queue with these molecules at sim start, just one single time </summary>
   internal List<Molecule> initialSpawnQueue = new();
   /// <summary> Refill the spawn queue with these molecules when it's empty (and not sim start) </summary>

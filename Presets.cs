@@ -19,9 +19,7 @@ using static ExtrawnersExt;
 using static ExtrawnersMod;
 
 #nullable enable
-internal static class Presets {
-  internal delegate void Preset(ExPuzzleData puzzleData, Puzzle puzzle, Solution sol);
-  internal static Dictionary<string, List<Preset>> presetsTable = new();
+internal static class Presets { 
   internal static Dictionary<string, Pair<List<int>, List<int>>> removeTable = new();
 
   internal static ExPuzzleData? LoadPresets(Puzzle puzzle, Solution sol, bool actualSolLoad) {
@@ -29,12 +27,7 @@ internal static class Presets {
     List<int> outputsToRemove = new();
     ExPuzzleData? toReturn = null;
     var puzzleId = puzzle.field_2766;
-    if (presetsTable.TryGetValue(puzzleId, out var maybePresetsFromTable)) {
-      var output = new ExPuzzleData();
-      foreach (var preset in maybePresetsFromTable) {
-        preset(output, puzzle, sol);
-      }
-      toReturn = output;
+    if (false) { 
     }
     else if (ExtransmissionsFormat.TryRead(puzzle, sol, out var extransmissionsPD, ref inputsToRemove, ref outputsToRemove, actualSolLoad)) {
       toReturn = extransmissionsPD;
@@ -115,7 +108,9 @@ internal static class Presets {
       if (forcedOrigin is HexIndex fo) glyph.origin = fo;
       glyph.fixDisjointMolecules = fixDisjointMolecules;
       glyph.produceData = new() {
-        initialSpawnQueue = spawnAtBeginning is null ? new() : spawnAtBeginning, 
+        perSpawnListProduceData = new() {
+          {0,new() {initialSpawnQueue = spawnAtBeginning is null ? new() : spawnAtBeginning}}
+        }
       };
     }
     if (spawnOnOutput is not null) puzzleData.counterData = spawnOnOutput.ToCounterDataSpawner(glyph);
@@ -178,7 +173,7 @@ internal static class Presets {
     HexIndex? forcedOrigin = null,
     bool fixDisjointMolecules = false,
     bool disableRng = false) {
- 
+
     var glyph = puzzleData.NewGlyph();
     {
       if (forcedOrigin is HexIndex fo) glyph.origin = fo;
@@ -186,15 +181,19 @@ internal static class Presets {
       glyph.HexesAndBondsFromMolec = randomBag;
       glyph.drawInputRawMolecules = randomBag;
       glyph.holeTextures = randomBag.Count > 1 ? Resources.blue : Resources.normal; //<- think about this harder
-      string maybeRandomInput = randomBag.Count > 1 && !disableRng? "Random Input" : "Reagent";
-      string maybeRandomDesc = randomBag.Count > 1 && !disableRng? "This reagent may be one of several randomly chosen molecules." : "A reagent for the alchemical engine.";
+      string maybeRandomInput = randomBag.Count > 1 && !disableRng ? "Random Input" : "Reagent";
+      string maybeRandomDesc = randomBag.Count > 1 && !disableRng ? "This reagent may be one of several randomly chosen molecules." : "A reagent for the alchemical engine.";
       glyph.customName = argName == "" ? maybeRandomInput : argName;
       glyph.customDesc = argDesc == "" ? maybeRandomDesc : argDesc;
       glyph.produceData = new() {
-        repeatingRefillQueue = randomBag,
-        queueChooseMethod = disableRng? SpawnChooseMethod.RepeatingSeq() : SpawnChooseMethod.Random(),
-      }; 
+        perSpawnListProduceData = new() {
+          {0,new() {
+            repeatingRefillQueue = randomBag,
+            queueChooseMethod = disableRng? SpawnChooseMethod.RepeatingSeq() : SpawnChooseMethod.Random(),
+            }}
+        }, 
+      };
     }
-    if (dependentOutputs is not null) puzzleData.counterData = dependentOutputs.ToCounterDataRandomInput(glyph,randomBag);
-  }  
+    if (dependentOutputs is not null) puzzleData.counterData = dependentOutputs.ToCounterDataRandomInput(glyph, randomBag);
+  }
 }

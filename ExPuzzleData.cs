@@ -37,6 +37,7 @@ internal sealed record class ExPuzzleData {
     }
   }
 }
+ 
 
 internal sealed record class SimState {
   internal readonly ExPuzzleData pData;
@@ -149,7 +150,7 @@ internal sealed record class SimState {
       var part = KV.Key;
       var pss = PSS(seb, part);
       if (when == PRE_CYCLE && sim.Cycle() == 0) { //spawn starting molec
-        state.BeginSpawning(rng, part, sim, ignoreCooldown: true);
+        state.BeginSpawning(rng, part, sim );
         state.RealizeSpawningQueue(part, sim, out var didSpawnQueue);
         counterSystem.AddCountersProducing(state.glyph, didSpawnQueue);
       }

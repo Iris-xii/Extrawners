@@ -67,6 +67,7 @@ internal static class MultiOutputDependencyExt {
       });
       withdrawals.Add(CounterWithdrawal.Producing(mod.molecules.ToList(),
         new() { { $"{randomIdent}_{nextAvailableCounterName}", 1 } },
+        0,
         onTarget
         ));
 
