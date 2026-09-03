@@ -84,7 +84,7 @@ internal sealed record CounterWithdrawal {
     k = K.PRODUCE,
     __queueIdx = onQueueIndex,
     outputOnceIfProduceRaw = toProduceOnce,
-  }; 
+  };
   internal static CounterWithdrawal Producing(List<Molecule> toProduceOnce,
   Dictionary<string, int> withdrawals,
   int onQueueIndex,
@@ -114,19 +114,20 @@ internal sealed record CounterWithdrawal {
   };
   internal void ProcessSinkTakeover(CounterSystem sys, SpawnerState state) {
     if (k != K.SINK_TAKEOVER) return;
-    if (nowAcceptsTheseIfSinkTakover is null) return; 
-    if(!IsTarget(state)) return;
-    if(sinkTakeoverForce) state.forceTakeOverAlways = true;
-    var couldWithdraw = TryWithdraw(sys); 
+    if (nowAcceptsTheseIfSinkTakover is null) return;
+    if (!IsTarget(state)) return;
+    if (sinkTakeoverForce) state.forceTakeOverAlways = true;
+    var couldWithdraw = TryWithdraw(sys);
     if (!couldWithdraw) return;
     state.takeoverSinkSequence.AddRange(nowAcceptsTheseIfSinkTakover);
   }
   internal void ProcessProducing(CounterSystem sys, SpawnerState state) {
     if (k != K.PRODUCE) return;
-    if(!IsTarget(state)) return;
+    if (!IsTarget(state)) return;
     var couldWithdraw = TryWithdraw(sys);
     if (!couldWithdraw) return;
-    state.spawningList.Get(__queueIdx).Concat(outputOnceIfProduceRaw);
+    var molQueue = state.spawningList.Get(__queueIdx);
+    state.spawningList.Set(molQueue.Concat(outputOnceIfProduceRaw).ToList(), __queueIdx);
   }
   private bool TryWithdraw(CounterSystem sys) {
     foreach (var KV in withdrawal) {

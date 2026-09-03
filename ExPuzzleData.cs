@@ -40,7 +40,7 @@ internal sealed record class ExPuzzleData {
     }
   }
 }
- 
+
 
 internal sealed record class SimState {
   internal readonly ExPuzzleData pData;
@@ -49,11 +49,11 @@ internal sealed record class SimState {
   internal Random rng;
   internal IExtrawnersPuzzle? extrawnersPuzzle = null;
 
-  internal SimState(ExPuzzleData pData, Solution sol ) {
+  internal SimState(ExPuzzleData pData, Solution sol) {
     pData.PreparePartTypes();
     this.pData = pData;
     this.counterSystem = new(pData.counterData);
-    this.spawnerStates = new(); 
+    this.spawnerStates = new();
     this.rng = new(sol.Puzzle().field_2766.GetHashCode());
     foreach (var anyP in sol.PartList()) {
       var partType = anyP.Type();
@@ -61,7 +61,7 @@ internal sealed record class SimState {
         .Where(pdg => SpawnerGlyph.partTypes[pdg.partTypesIndex].field_1528 == partType.field_1528);
       foreach (var matchingSpawnerGlyph in matchingThisPart) {
         spawnerStates[anyP] = new(matchingSpawnerGlyph) {
-          userData = pData.extrawnersPuzzleStatic?.InitializePerGlyphUserData(new(matchingSpawnerGlyph),sol.Puzzle().PuzzleId())
+          userData = pData.extrawnersPuzzleStatic?.InitializePerGlyphUserData(new(matchingSpawnerGlyph), sol.Puzzle().PuzzleId())
         };
       }
     }
@@ -95,15 +95,17 @@ internal sealed record class SimState {
         else {
           preview = spawnerState.SinkPreview().ToList();
         }
-        SpawnerGlyph.DrawMolAsIfOutput(
-          preview[(int)Math.Floor(seb.AccumulatedTime() % preview.Count)],
-          seb, pss, renderer, pos, part,
-          animateMoleculesRaw: spawnerState.currentlySinkingRaw,
-          doOutputText: data.requiredProducts > 0,
-          requiredOutputs: data.requiredProducts,
-          currentOutputs: spawnerState.validOutputsSank <= data.requiredProducts ?
-            spawnerState.validOutputsSank : data.requiredProducts
-        );
+        if (preview.Count > 0) {
+          SpawnerGlyph.DrawMolAsIfOutput(
+            preview[(int)Math.Floor(seb.AccumulatedTime() % preview.Count)],
+            seb, pss, renderer, pos, part,
+            animateMoleculesRaw: spawnerState.currentlySinkingRaw,
+            doOutputText: data.requiredProducts > 0,
+            requiredOutputs: data.requiredProducts,
+            currentOutputs: spawnerState.validOutputsSank <= data.requiredProducts ?
+              spawnerState.validOutputsSank : data.requiredProducts
+          );
+        }
       }
     }
   }
@@ -157,7 +159,7 @@ internal sealed record class SimState {
       var part = KV.Key;
       var pss = PSS(seb, part);
       if (when == PRE_CYCLE && sim.Cycle() == 0) { //spawn starting molec
-        state.BeginSpawning(rng, part, sim );
+        state.BeginSpawning(rng, part, sim);
         state.RealizeSpawningQueue(part, sim, out var didSpawnQueue);
         counterSystem.AddCountersProducing(state.glyph, didSpawnQueue);
       }
