@@ -38,7 +38,7 @@ public static class ExtransmutationsCompat {
 
   internal static void InputDoIchor(int glyphIdx, Part part, List<Molecule> outputRaw) {
     var safeSpots = outputRaw
-      .SelectMany(m => m.ShiftedBy(part).method_1100())
+      .SelectMany(m => m.ShiftedToGlobal(part).method_1100())
       .Where(kv => kv.Value.field_2275.QuintAtomType == "Extransmutations:ichor")
       .Select(kv => kv.Key).ToList();
     SetIchorSafeSpots(glyphIdx,safeSpots);
@@ -46,7 +46,7 @@ public static class ExtransmutationsCompat {
 
   internal static void OutputDoIchor(int glyphIdx, Part part, List<Molecule> molAcceptsRaw, Queue<Molecule>? maybeQ) {
     if (maybeQ is not null && maybeQ.Count > 0) {
-      var shiftedQ = maybeQ.Peek().ShiftedBy(part).method_1100()
+      var shiftedQ = maybeQ.Peek().ShiftedToGlobal(part).method_1100()
         .Where(kv => kv.Value.field_2275.QuintAtomType == "Extransmutations:ichor")
         .Select(kv => kv.Key)
         .ToList();
@@ -54,7 +54,7 @@ public static class ExtransmutationsCompat {
     }
     else {
       var safeSpots = molAcceptsRaw
-        .SelectMany(m => m.ShiftedBy(part).method_1100())
+        .SelectMany(m => m.ShiftedToGlobal(part).method_1100())
         .Where(kv => kv.Value.field_2275.QuintAtomType == "Extransmutations:ichor")
         .Select(kv => kv.Key).ToList();
       SetIchorSafeSpots(glyphIdx, safeSpots);

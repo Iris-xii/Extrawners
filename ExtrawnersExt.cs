@@ -65,7 +65,7 @@ internal static class ExtrawnersExt {
   internal static SolutionEditorBase SEB(this Sim sim) => sim.field_3818;
   internal static void AddMolecule(this Sim sim, Molecule m) => sim.field_3823.Add(m);
   internal static bool RemoveMolecule(this Sim sim, Molecule m) => sim.field_3823.Remove(m);
-  internal static Molecule ShiftedBy(this Molecule m, Part part) => m.ShiftedBy(part.method_1161(), part.method_1163());
+  internal static Molecule ShiftedToGlobal(this Molecule m, Part part) => m.ShiftedBy(part.method_1161(), part.method_1163());
   internal static Molecule ShiftedBy(this Molecule m, HexIndex shift, HexRotation rot) => m.method_1115(rot).method_1117(shift);
   internal static Molecule SimCoordsToPart(this Molecule m, Part part) => m.method_1117(-part.method_1161()).method_1115(part.method_1163().Negative());
   internal static List<Part> PartList(this Solution solution) => solution.field_3919;
@@ -176,7 +176,7 @@ internal static class ExtrawnersExt {
       return maybeHolding.method_1085() && (maybeHolding.method_1087() == molec);
     });
   }
-  internal static bool DoesNotOverlap(Sim sim, Part item2, Molecule shifted,
+  internal static bool DoesNotOverlap(Sim sim, Part? unused, Molecule shifted,
   HashSet<HexIndex>? alreadyOccupiedAbsolute = null) {
     HashSet<HexIndex> hashSet = alreadyOccupiedAbsolute ?? new();
     foreach (Molecule item in sim.field_3823) {
@@ -315,6 +315,30 @@ internal static class ExtrawnersExt {
       sortaBonds.UnionWith(mol.method_1101().Select(a => new Pair<HexIndex, HexIndex>(a.field_2187, a.field_2188)));
     }
   }
+  
+  internal static string? TryGetPuzzleFile(string nameWithExt) {
+    var customPath = Path.Combine(class_269.field_2102, "custom");
+    string targetFile = nameWithExt;
+    string? foundFilePathFull = null;
+    foreach (var filepath in Directory.EnumerateFiles(customPath)) {
+      var filename = Path.GetFileName(filepath);
+      if (filename == targetFile) {
+        foundFilePathFull = filepath;
+        break;
+      }
+    }
+    foreach (var puzzleDir in QuintessentialLoader.ModPuzzleDirectories) {
+      foreach (var filepath in Directory.EnumerateFiles(puzzleDir)) {
+        var filename = Path.GetFileName(filepath);
+        if (filename == targetFile) {
+          foundFilePathFull = filepath;
+          break;
+        }
+      }
+    }
+    return foundFilePathFull;
+  }
+  
   internal struct FuckingComparer : IEqualityComparer<Molecule> {//I can't get Distinct to just take a lambda >:(
     public readonly bool Equals(Molecule x, Molecule y) => molecMatchesExact(x, y);
     public readonly int GetHashCode(Molecule obj) => obj.GetHashCode();

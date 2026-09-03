@@ -66,7 +66,7 @@ internal sealed record SinkData() {
     bool normalBehavior = !forceTakeOverAlways && potentialTakeoverSinkListRaw.Count <= 0;
     if (potentialTakeoverSinkListRaw.Count > 0) {
       var len = potentialTakeoverSinkListRaw.Count;
-      var templateShifted = potentialTakeoverSinkListRaw[0].ShiftedBy(part);
+      var templateShifted = potentialTakeoverSinkListRaw[0].ShiftedToGlobal(part);
       if (molecMatchesExact(candidateSim, templateShifted) && !sim.MoleculeHeld(candidateSim)) {
         potentialTakeoverSinkListRaw.RemoveAt(0);
         return SinkEffect.Accept(candidateSim);
@@ -75,26 +75,26 @@ internal sealed record SinkData() {
     if (normalBehavior) {
       if (moleculesSankFromSequence >= 0 && sequencedProgressMolecules.Count > 0) {
         var len = sequencedProgressMolecules.Count;
-        var templateShifted = sequencedProgressMolecules[moleculesSankFromSequence % len].ShiftedBy(part);
+        var templateShifted = sequencedProgressMolecules[moleculesSankFromSequence % len].ShiftedToGlobal(part);
         if (molecMatchesExact(candidateSim, templateShifted) && !sim.MoleculeHeld(candidateSim)) {
           return SinkEffect.AcceptAdvanceSeq(candidateSim);
         }
       }
       for (int i = 0; i < progressMolecules.Count; i++) {
         Molecule rawM = progressMolecules[i];
-        var templateShifted = rawM.ShiftedBy(part);
+        var templateShifted = rawM.ShiftedToGlobal(part);
         if (molecMatchesExact(candidateSim, templateShifted) && !sim.MoleculeHeld(candidateSim)) {
           return SinkEffect.Accept(candidateSim);
         }
       }
       foreach (var rawM in noProgressMolecules) {
-        var templateShifted = rawM.ShiftedBy(part);
+        var templateShifted = rawM.ShiftedToGlobal(part);
         if (molecMatchesExact(candidateSim, templateShifted) && !sim.MoleculeHeld(candidateSim)) {
           return SinkEffect.SinkNoProgress(candidateSim);
         }
       }
       foreach (var rawM in crashMolecules) {
-        var templateShifted = rawM.ShiftedBy(part);
+        var templateShifted = rawM.ShiftedToGlobal(part);
         if (molecMatchesExact(candidateSim, templateShifted) && !sim.MoleculeHeld(candidateSim)) {
           return SinkEffect.SinkCrash(candidateSim);
         }
@@ -104,7 +104,7 @@ internal sealed record SinkData() {
     foreach (var hex in holeHexes) {
       sinkAnyTemplateRaw.method_1105(new(VanillaAtoms.salt), hex);
     }
-    var sinkAnyTemplateShifted = sinkAnyTemplateRaw.ShiftedBy(part);
+    var sinkAnyTemplateShifted = sinkAnyTemplateRaw.ShiftedToGlobal(part);
     if (MolecMatchesSinkAny(candidateSim, sinkAnyTemplateShifted, sim) && !sim.MoleculeHeld(candidateSim)) {
       return SinkEffect.FromEffect(resultWhenFitButNoMatch, candidateSim);
     }

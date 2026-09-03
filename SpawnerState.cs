@@ -41,6 +41,8 @@ internal sealed class SpawnerState {
   internal List<Molecule> takeoverSinkSequence = new();
   internal bool forceTakeOverAlways = false; //hack
 
+  internal object? userData = null;
+
   internal SinkEffect TrySink(
       Molecule candidateSim,
       Sim sim,
@@ -57,8 +59,8 @@ internal sealed class SpawnerState {
     didSpawnRaw = new();
     List<Molecule> toRemove = new();
     foreach (var rawM in currentlySpawningRaw) {
-      if (DoesNotOverlap(sim, part, rawM.ShiftedBy(part))) {
-        var shifted = rawM.ShiftedBy(part);
+      if (DoesNotOverlap(sim, part, rawM.ShiftedToGlobal(part))) {
+        var shifted = rawM.ShiftedToGlobal(part);
         sim.AddMolecule(shifted);
         didSpawnRaw.Add(rawM);
         if (glyph.fixDisjointMolecules) { Brimstone.API.ForceRecomputeBonds(rawM); }
@@ -91,9 +93,9 @@ internal sealed class SpawnerState {
       if (spawnList.Count > 0) {
         var choose = prodData.queueChooseMethod;
         if (choose.PeekChooseFrom(spawnList, rng, out var chosenIdx) is Molecule rawM) {
-          var shifted = rawM.ShiftedBy(part);
+          var shifted = rawM.ShiftedToGlobal(part);
           HashSet<HexIndex> occupiedInQueue = new(currentlySpawningRaw
-            .SelectMany(m => m.ShiftedBy(part).method_1100().Keys));
+            .SelectMany(m => m.ShiftedToGlobal(part).method_1100().Keys));
           if (DoesNotOverlap(sim, part, shifted, occupiedInQueue)) {
             spawnList.RemoveAt(chosenIdx);
             currentlySpawningRaw.Add(rawM);

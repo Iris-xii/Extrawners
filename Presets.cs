@@ -3,6 +3,8 @@ using MonoMod.RuntimeDetour;
 using MonoMod.Cil;
 using Quintessential.Serialization;
 using System.Collections.Generic;
+using System.Reflection;
+using Extrawners.API;
 
 namespace Extrawners;
 
@@ -19,7 +21,7 @@ using static ExtrawnersExt;
 using static ExtrawnersMod;
 
 #nullable enable
-internal static class Presets { 
+internal static class Presets {
   internal static Dictionary<string, Pair<List<int>, List<int>>> removeTable = new();
 
   internal static ExPuzzleData? LoadPresets(Puzzle puzzle, Solution sol, bool actualSolLoad) {
@@ -27,7 +29,27 @@ internal static class Presets {
     List<int> outputsToRemove = new();
     ExPuzzleData? toReturn = null;
     var puzzleId = puzzle.field_2766;
-    if (false) { 
+    if (TryGetPuzzleFile($"{puzzleId}.extrawners.dll") is string fileNameFull) {
+      var ass = Assembly.LoadFrom(fileNameFull);
+      var maybeIExtPuzzles = ass.GetTypes().Where(type => typeof(IExtrawnersPuzzle).IsAssignableFrom(type) &&
+      !type.IsInterface && !type.IsAbstract && type.IsPublic).ToList();
+      if(maybeIExtPuzzles.Count > 1) {
+        throw new InvalidDataException("Multiple IExtrawnersPuzzle implementations present. This is not allowed");
+      } else if (maybeIExtPuzzles.Count == 0) {
+        throw new InvalidDataException("No IExtrawnersPuzzle impl found. (Is the type public?)");
+      }
+      var iExtPuzzle = maybeIExtPuzzles.First();
+      var activated = (IExtrawnersPuzzle) Activator.CreateInstance(iExtPuzzle);
+      toReturn = new() {
+        extrawnersPuzzleStatic = activated
+      };
+      var curIdx = 0;
+      foreach(var potentialGlyph in activated.MakeExtrawnersGlyphs()) {
+        toReturn.glyphs.Add(potentialGlyph.ToExtrawners(curIdx));
+        curIdx += 1;
+      }
+      inputsToRemove = activated.InputsToRemove();
+      outputsToRemove = activated.OutputsToRemove();
     }
     else if (ExtransmissionsFormat.TryRead(puzzle, sol, out var extransmissionsPD, ref inputsToRemove, ref outputsToRemove, actualSolLoad)) {
       toReturn = extransmissionsPD;
@@ -191,7 +213,7 @@ internal static class Presets {
             repeatingRefillQueue = randomBag,
             queueChooseMethod = disableRng? SpawnChooseMethod.RepeatingSeq() : SpawnChooseMethod.Random(),
             }}
-        }, 
+        },
       };
     }
     if (dependentOutputs is not null) puzzleData.counterData = dependentOutputs.ToCounterDataRandomInput(glyph, randomBag);

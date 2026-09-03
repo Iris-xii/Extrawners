@@ -21,6 +21,12 @@ public sealed record ProduceArgs {
   /// <summary> In absolute (sim) co-ords! </summary>
   public List<Molec> allMolecsInSim = new();
   public List<ExtrawnersGlyphState> extrawnersGlyphs = new();
+
+  /// <summary> Could this molec be spawned into the sim, or would it be blocked by something? </summary> 
+  public bool CouldSpawn(Molec molecAbsolute) => DoesNotOverlap(sim, null, molecAbsolute.OM());
+
+  //
+  private Sim sim = null!;
 }
 public sealed record ProduceOut() {
   /// <summary> If present, errors the sim at the specified location with the specified message. </summary>
@@ -40,7 +46,7 @@ public sealed record SinkOut() {
   /// <summary> If present, errors the sim at the specified location with the specified message. </summary>
   public ApiPair<string, ApiHexIdx>? crashSim = null;
 }
-public sealed record DisplayArgs { 
+public sealed record DisplayArgs {
   public int currentCycle;
   /// <summary> A 0-1 float you may use to change your output and thus animate the rendered mols </summary>
   public float displayTime;
@@ -58,13 +64,17 @@ public sealed record DisplayOut() {
 /// Entrypoint for an Extrawners puzzle.
 /// </summary>
 public interface IExtrawnersPuzzle {
-  public IEnumerator<ExtrawnersGlyphData> MakeExtrawnersGlyphs();
+  /// <summary> Called on sim start/reset, must return a 'fresh' copy with brand new state </summary> 
+  public IExtrawnersPuzzle MakeNew();
+  public IEnumerable<ExtrawnersGlyphData> MakeExtrawnersGlyphs();
   /// <summary> Allows you to attach a bit of per-glyph state of your choice. </summary> 
-  public object? InitializePerGlyphUserData(ExtrawnersGlyphBrief glyph);
+  public object? InitializePerGlyphUserData(ExtrawnersGlyphBrief glyph, string puzzleId);
   /// <summary> Called once at sim start, and then every time molecs may be produced </summary> 
   public ProduceOut Produce(ProduceArgs args);
   public SinkOut Sink(SinkArgs args);
   /// <summary> Called to decide what molecules to render during the sim, such as 
   /// previews over the outputs/sinks matching what they expect </summary> 
   public DisplayOut Display(DisplayArgs args);
+  public List<int> InputsToRemove();
+  public List<int> OutputsToRemove();
 }

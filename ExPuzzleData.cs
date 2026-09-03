@@ -15,11 +15,14 @@ using static ExtrawnersExt;
 using Quintessential;
 
 using static LogicWhen;
+using Extrawners.API;
 #nullable enable
+
 
 internal sealed record class ExPuzzleData {
   internal List<SpawnerGlyph> glyphs = new();
   internal CounterData counterData = new();
+  internal IExtrawnersPuzzle? extrawnersPuzzleStatic = null;
 
   internal SpawnerGlyph NewGlyph() {
     int next = glyphs.Count;
@@ -44,21 +47,25 @@ internal sealed record class SimState {
   internal Dictionary<Part, SpawnerState> spawnerStates;
   internal CounterSystem counterSystem;
   internal Random rng;
+  internal IExtrawnersPuzzle? extrawnersPuzzle = null;
 
-  internal SimState(ExPuzzleData pData, Solution sol) {
+  internal SimState(ExPuzzleData pData, Solution sol ) {
     pData.PreparePartTypes();
     this.pData = pData;
     this.counterSystem = new(pData.counterData);
-    this.spawnerStates = new();
+    this.spawnerStates = new(); 
     this.rng = new(sol.Puzzle().field_2766.GetHashCode());
     foreach (var anyP in sol.PartList()) {
       var partType = anyP.Type();
       var matchingThisPart = pData.glyphs
         .Where(pdg => SpawnerGlyph.partTypes[pdg.partTypesIndex].field_1528 == partType.field_1528);
       foreach (var matchingSpawnerGlyph in matchingThisPart) {
-        spawnerStates[anyP] = new(matchingSpawnerGlyph);
+        spawnerStates[anyP] = new(matchingSpawnerGlyph) {
+          userData = pData.extrawnersPuzzleStatic?.InitializePerGlyphUserData(new(matchingSpawnerGlyph),sol.Puzzle().PuzzleId())
+        };
       }
     }
+    this.extrawnersPuzzle = pData.extrawnersPuzzleStatic?.MakeNew();
   }
 
   internal void RenderFn(int glyphIndex, Part part, Vector2 pos, SolutionEditorBase seb, class_195 renderer) {
@@ -112,11 +119,11 @@ internal sealed record class SimState {
         var part = KV.Key;
         var data = state.glyph;
         var safeIn = data.drawInputRawMolecules
-          .SelectMany(m => m.ShiftedBy(part).method_1100())
+          .SelectMany(m => m.ShiftedToGlobal(part).method_1100())
           .Where(kv => kv.Value.field_2275.QuintAtomType == "Extransmutations:ichor")
           .Select(kv => kv.Key);
         var safeOut = data.drawOutputRawMolecules
-          .SelectMany(m => m.ShiftedBy(part).method_1100())
+          .SelectMany(m => m.ShiftedToGlobal(part).method_1100())
           .Where(kv => kv.Value.field_2275.QuintAtomType == "Extransmutations:ichor")
           .Select(kv => kv.Key);
         foreach (var item in safeIn.Concat(safeOut)) {

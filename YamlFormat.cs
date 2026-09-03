@@ -65,7 +65,7 @@ public static class YamlFormat {
         }
         Presets.RandomInputRule(
           puzzleData: ref puzzleData,
-          randomBag: e.RandomBag is not null? e.RandomBag.Select(mm => mm.FromModel()).ToList() : new(),
+          randomBag: e.RandomBag is not null ? e.RandomBag.Select(mm => mm.FromModel()).ToList() : new(),
           dependentOutputs: maybeDepOutput is not null ? maybeDepOutput.ToList() : null,
           argName: e.CustomName,
           argDesc: e.CustomDesc,
@@ -89,7 +89,7 @@ public static class YamlFormat {
         Presets.Spawner(
           ref puzzleData,
           spawnAtBeginning: e.SpawnAtBeginning?.Select(e => e.FromModel()).ToList(),
-          spawnOnOutput: e.SpawnOnOutput is not null? e.SpawnOnOutput?.Select(m => m.ToPresetForm()).ToList() : null,
+          spawnOnOutput: e.SpawnOnOutput is not null ? e.SpawnOnOutput?.Select(m => m.ToPresetForm()).ToList() : null,
           argName: e.CustomName,
           argDesc: e.CustomDesc,
           forcedOrigin: e.ForcedOrigin,
@@ -106,26 +106,9 @@ public static class YamlFormat {
   }
 
   internal static bool TryFindYaml(Puzzle currentlyLoading, out ExPuzzleData maybePuzzleData, Puzzle puzzle, Solution sol) {
-    maybePuzzleData = new();
-    var customPath = Path.Combine(class_269.field_2102, "custom");
+    maybePuzzleData = new(); 
     string targetFile = $"{currentlyLoading.PuzzleId()}.extrawners.yaml";
-    string? foundFilePathFull = null;
-    foreach (var filepath in Directory.EnumerateFiles(customPath)) {
-      var filename = Path.GetFileName(filepath);
-      if (filename == targetFile) {
-        foundFilePathFull = filepath;
-        break;
-      }
-    }
-    foreach (var puzzleDir in QuintessentialLoader.ModPuzzleDirectories) {
-      foreach (var filepath in Directory.EnumerateFiles(puzzleDir)) {
-        var filename = Path.GetFileName(filepath);
-        if (filename == targetFile) {
-          foundFilePathFull = filepath;
-          break;
-        }
-      }
-    }
+    string? foundFilePathFull = TryGetPuzzleFile(targetFile);
     if (foundFilePathFull is not null) {
       Log($"Found extrawners file: {Path.GetFileName(foundFilePathFull)}");
       string fileContents = File.ReadAllText(foundFilePathFull);
