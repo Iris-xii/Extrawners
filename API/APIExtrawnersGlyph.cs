@@ -94,9 +94,10 @@ public record ExtrawnersGlyphState {
   //
   private readonly Part part;
   internal readonly SpawnerState state;
-  internal ExtrawnersGlyphState(ExtrawnersGlyphBrief data, Part part,SpawnerState state) {
+  internal ExtrawnersGlyphState(ExtrawnersGlyphBrief data, Part part,SpawnerState state,object? userData) {
     this.data = data;
     this.part = part;
     this.state = state;
+    this.userData = userData;
   }
 }

@@ -145,6 +145,15 @@ internal sealed partial record class SpawnerGlyph {
       DrawMol(animateMolecule, pss, rendererPos, part, fractionOnBoard: seb.AnimTime());
     }
   }
+    internal static void DrawMolAsIfInputAbsolute(Molecule? rawM,
+    SolutionEditorBase seb, 
+    Vector2 rendererPos, 
+    IEnumerable<Molecule> animateMoleculesRaw) {
+    if (seb.method_503() == enum_128.Stopped && rawM is Molecule m) { DrawMolAbsolute(m, rendererPos); }
+    foreach (var animateMolecule in animateMoleculesRaw) {
+      DrawMolAbsolute(animateMolecule,  rendererPos, fractionOnBoard: seb.AnimTime());
+    }
+  }
   internal static void DrawMolAsIfOutputAbsolute(Molecule? rawM,
       SolutionEditorBase seb,
       class_195 renderer,

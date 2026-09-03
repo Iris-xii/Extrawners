@@ -28,11 +28,15 @@ public sealed record ProduceArgs {
   public void Log(string s) => ExtrawnersMod.Log(s);
 
   //
-  private Sim sim = null!;
+  internal Sim sim = null!;
 }
 public sealed record ProduceOut() {
   /// <summary> If present, errors the sim at the specified location with the specified message. </summary>
   public ApiPair<string, ApiHexIdx>? crashSim = null;
+  /// <summary> In absolute co-ords, a list of molecules to produce next.<br/>
+  /// Use <see cref="ProduceArgs.CouldSpawn"/> before adding a molecule to check if it can be done,
+  /// otherwise molecules may be spawned in occupied spots and crash the sim.</summary>
+  public List<Molec> produceMolecs = new();
 }
 public sealed record SinkArgs {
   public int currentCycle;
