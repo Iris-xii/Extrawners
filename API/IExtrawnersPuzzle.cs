@@ -21,9 +21,11 @@ public sealed record ProduceArgs {
   /// <summary> In absolute (sim) co-ords! </summary>
   public List<Molec> allMolecsInSim = new();
   public List<ExtrawnersGlyphState> extrawnersGlyphs = new();
+  public bool ichorSuppressionActive = false;
 
   /// <summary> Could this molec be spawned into the sim, or would it be blocked by something? </summary> 
   public bool CouldSpawn(Molec molecAbsolute) => DoesNotOverlap(sim, null, molecAbsolute.OM());
+  public void Log(string s) => ExtrawnersMod.Log(s);
 
   //
   private Sim sim = null!;
@@ -37,6 +39,9 @@ public sealed record SinkArgs {
   /// <summary> In absolute (sim) co-ords! </summary>
   public List<Molec> allMolecsInSim = new();
   public List<ExtrawnersGlyphState> extrawnersGlyphs = new();
+  public bool ichorSuppressionActive = false;
+
+  public void Log(string s) => ExtrawnersMod.Log(s);
 }
 public sealed record SinkOut() {
   /// <summary> Sink these molecules (remove them from the sim) (absolute coords!) </summary>
@@ -47,17 +52,17 @@ public sealed record SinkOut() {
   public ApiPair<string, ApiHexIdx>? crashSim = null;
 }
 public sealed record DisplayArgs {
-  public int currentCycle;
-  /// <summary> A 0-1 float you may use to change your output and thus animate the rendered mols </summary>
-  public float displayTime;
-  /// <summary> In absolute (sim) co-ords! </summary>
-  public List<Molec> allMolecsInSim = new();
-  public List<ExtrawnersGlyphState> extrawnersGlyphs = new();
+  /// <summary> A float that increases over time, for animation purposes </summary>
+  public float accumulatedTime; 
+  public ExtrawnersGlyphState extrawnersGlyphBeingRendered = null!;
+  public bool ichorSuppressionActive = false;
+
+  public void Log(string s) => ExtrawnersMod.Log(s);
 }
 public sealed record DisplayOut() {
-  /// <summary> Absolute (sim) coords.<br/>
+  /// <summary> Relative (part)! coords.<br/>
   /// All of these molecules will be rendered "darkened", like an output preview. </summary>
-  public List<Molec> renderAsIfSink = new();
+  public List<Molec> renderAsIfSinkRelativeToGlyph = new();
 }
 
 /// <summary>
@@ -73,7 +78,8 @@ public interface IExtrawnersPuzzle {
   public ProduceOut Produce(ProduceArgs args);
   public SinkOut Sink(SinkArgs args);
   /// <summary> Called to decide what molecules to render during the sim, such as 
-  /// previews over the outputs/sinks matching what they expect </summary> 
+  /// previews over the outputs/sinks matching what they expect. <br/>
+  /// Unlike other functions, this is called once per individual glyph! </summary> 
   public DisplayOut Display(DisplayArgs args);
   public List<int> InputsToRemove();
   public List<int> OutputsToRemove();

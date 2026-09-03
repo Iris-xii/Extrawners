@@ -67,6 +67,22 @@ public sealed class Molec {
   public List<Bond> bonds = new();
   public Molec() {}
 
+  public bool MatchesExact(Molec other) { // TODO: reimplement this without conversions
+    var om1 = this.OM();
+    var om2 = other.OM();
+    //DebugLog($"Comparison {DumpMol(om1)} vs {DumpMol(om2)}: {molecMatchesExact(om1,om2)}");
+    return molecMatchesExact(om1,om2);
+  }
+  /// <summary> Returns true if <see cref="smaller"/> can 'fit through' this molecule,
+  /// if this molecule were a hole. </summary> 
+  public bool OtherCanFitThrough(Molec smaller) {
+    var om1 = this.OM();
+    var om2 = smaller.OM();
+    return MolecMatchesSinkAny(om2,om1,null);
+  }
+
+
+//
   internal Molecule OM() {
     Molecule omMolec = new();
     foreach (var KV in atoms) {

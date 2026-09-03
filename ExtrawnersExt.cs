@@ -92,6 +92,21 @@ internal static class ExtrawnersExt {
       return atomType;
   }
  
+   internal static void DrawMolAbsolute(Molecule absMol, 
+      Vector2 rendererPos, 
+      float rotation = 0f,
+      float alpha = 1f,
+      float fractionOnBoard = 1f,
+      float shadowStrength = 1f,
+      bool light = false) {
+    Editor.method_925(absMol,
+      rendererPos,
+      new(), //hexindex
+      rotation /*rotation*/,
+      alpha /*alpha*/,
+      fractionOnBoard /* 0 = gone*/,
+      shadowStrength /*shadow str*/, light /*light*/, null);
+  }
   internal static void DrawMol(Molecule rawM,
       PartSimState pss,
       Vector2 rendererPos,
@@ -131,7 +146,7 @@ internal static class ExtrawnersExt {
 
   internal static Func<Molecule, Molecule, bool> molecMatchesExact =
       typeof(Sim).GetMethod("method_1844", BF.NonPublic | BF.Static).CreateDelegate<Func<Molecule, Molecule, bool>>();
-  internal static bool MolecMatchesSinkAny(Molecule simMolecShifted, Molecule templateShifted,Sim sim) {
+  internal static bool MolecMatchesSinkAny(Molecule simMolecShifted, Molecule templateShifted,Sim? sim=null) {
     // Serializing them and de-serializing them is a bit jank but
     // I didn't feel like writing a clone function by hand and otherwise
     // there is weird action at a distance from the molecules referencing

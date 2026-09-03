@@ -47,7 +47,9 @@ internal sealed record class SimState {
   internal Dictionary<Part, SpawnerState> spawnerStates;
   internal CounterSystem counterSystem;
   internal Random rng;
+
   internal IExtrawnersPuzzle? extrawnersPuzzle = null;
+  internal List<Molecule> currentlySinkingAbsolute = new();
 
   internal SimState(ExPuzzleData pData, Solution sol) {
     pData.PreparePartTypes();
@@ -107,10 +109,34 @@ internal sealed record class SimState {
           );
         }
       }
+      if (extrawnersPuzzle is IExtrawnersPuzzle EP && seb.method_503() != enum_128.Stopped) {
+        var displayOut = EP.Display(new() {
+          accumulatedTime = seb.AccumulatedTime(), 
+          ichorSuppressionActive = ExtransmutationsCompat.isIchorSuppressionActive,
+          extrawnersGlyphBeingRendered = new(new(data), part, spawnerState),
+        });
+        foreach (var m in displayOut.renderAsIfSinkRelativeToGlyph) {
+          SpawnerGlyph.DrawMolAsIfOutput(
+            m.OM(),
+            seb, pss, renderer, pos, part, animateMoleculesRaw: new List<Molecule>(),
+            spawnerState.validOutputsSank,data.requiredProducts,data.requiredProducts > 0
+          );
+        }
+      }
     }
+    SpawnerGlyph.DrawMolAsIfOutputAbsolute(null,seb,renderer,pos,currentlySinkingAbsolute,doOutputText:false);
   }
   internal void LogicFn(Sim sim, LogicWhen when) {
     var seb = sim.SEB();
+
+    List<ExtrawnersGlyphState> allExtrawnersGlyphsApi = new();
+    foreach(var KV in spawnerStates) {
+      allExtrawnersGlyphsApi.Add(new(new ExtrawnersGlyphBrief(KV.Value.glyph),KV.Key,KV.Value));
+    }
+    List<Molec> allMolecsInSimApi = new();
+    foreach(var mol in sim.field_3823) {
+      allMolecsInSimApi.Add(new(mol));
+    }
 
     // Ichor safe spots -- Hackish!
     if (when == PRE_CYCLE && sim.Cycle() == 0) {
@@ -142,6 +168,7 @@ internal sealed record class SimState {
       counterSystem.WithdrawToSink(state); //not affected by Extranscompat!
       if (when == PRE_CYCLE) {
         state.currentlySinkingRaw = new();
+        currentlySinkingAbsolute = new();
       }
       else if (when == FIRST_HALF && !ExtransmutationsCompat.isIchorSuppressionActive) {
         List<SinkEffect> effects = new();
@@ -151,6 +178,36 @@ internal sealed record class SimState {
         }
         foreach (var effect in effects) { effect.UpdateState(state, sim, part); }
         foreach (var effect in effects) { counterSystem.AddCountersSank(effect, part, state.glyph); }
+      }
+    } 
+    if (when == FIRST_HALF && extrawnersPuzzle is IExtrawnersPuzzle EP) { // IExtrawnersPuzzle
+      var sinkOut = EP.Sink(new() {
+        currentCycle = sim.Cycle(),
+        ichorSuppressionActive = ExtransmutationsCompat.isIchorSuppressionActive,
+        extrawnersGlyphs = allExtrawnersGlyphsApi,
+        allMolecsInSim = allMolecsInSimApi,
+        });
+      if(sinkOut.crashSim is ApiPair<string, ApiHexIdx> crash) {
+        var message = crash.Left;
+        var where = crash.Right.OM();
+        sim.method_1854_crash(message, where, where);
+      }
+      foreach(var molecWantingSink in sinkOut.sinkMolecules) {
+        Molecule? simMolSunk = sim.field_3823
+        .Where(simMol => new Molec(simMol).MatchesExact(molecWantingSink))
+        .FirstOrDefault();
+        if(simMolSunk is not null) {
+          currentlySinkingAbsolute.Add(simMolSunk);
+          class_238.field_1991.field_1868.Play(seb);
+          sim.RemoveMolecule(simMolSunk);
+        }
+      }
+      foreach(var progress in sinkOut.progressBy) {
+        var state = progress.Left.state;
+        var progBy = progress.Right;
+        var sum = state.validOutputsSank + progBy;
+        if(sum < 0) sum = 0;
+        state.validOutputsSank = sum; 
       }
     }
     // Produce 

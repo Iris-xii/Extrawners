@@ -84,16 +84,16 @@ public record ExtrawnersGlyphState {
   public object? userData;
 
   public Molec ToRelative(Molec absolute) {
-    Molecule omm = absolute.OM().ShiftedToGlobal(part);
+    Molecule omm = absolute.OM().SimCoordsToPart(part); 
     return new(omm);
   }
   public Molec RelativeToAbsolute(Molec relative) {
-    Molecule omm = relative.OM().SimCoordsToPart(part);
+    Molecule omm = relative.OM().ShiftedToGlobal(part);
     return new(omm);
   }
   //
   private readonly Part part;
-  private readonly SpawnerState state;
+  internal readonly SpawnerState state;
   internal ExtrawnersGlyphState(ExtrawnersGlyphBrief data, Part part,SpawnerState state) {
     this.data = data;
     this.part = part;
