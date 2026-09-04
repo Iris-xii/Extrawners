@@ -193,7 +193,7 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     .Select(a => $".Atom(\"{a.Value.field_2275.QuintAtomType}\",{a.Key.Q},{a.Key.R})")
     .Concat(
       m.method_1101().Select(a =>
-      $".Bond((enum_126){(int)a.field_2186},{a.field_2187.Q},{a.field_2187.R},{a.field_2188.Q},{a.field_2188.R})")
+      $".Bond({(int)a.field_2186},{a.field_2187.Q},{a.field_2187.R},{a.field_2188.Q},{a.field_2188.R})")
     );
     return String.Join(String.Empty, stringEnumerator);
   }
@@ -202,11 +202,11 @@ public sealed partial class ExtrawnersMod : QuintessentialMod {
     PuzzleInputOutput[] pOutput = puzzle.field_2771;
     for (int i = 0; i < pInput.Length; i++) {
       Log($"input #{i} @{puzzle.PuzzleId()}:\n" +
-      $"var input{i} = new Molecule(){DumpMol(pInput[i].field_2813)};\n");
+      $"var input{i} = new Molec(){DumpMol(pInput[i].field_2813)};\n");
     }
     for (int i = 0; i < pOutput.Length; i++) {
       Log($"output #{i} @{puzzle.PuzzleId()}:\n" +
-      $"var output{i} = new Molecule(){DumpMol(pOutput[i].field_2813)};\n");
+      $"var output{i} = new Molec(){DumpMol(pOutput[i].field_2813)};\n");
     }
   }
 

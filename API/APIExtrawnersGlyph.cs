@@ -21,7 +21,7 @@ public record ExtrawnersGlyphBrief {
   public string? customName = null;
   public string? customDesc = null;
   public string internalName = "";
-  public ushort requiredProducts = 0; 
+  public ushort requiredProducts = 0;
   /// <summary> Glyph co-ords </summary>
   public List<Molec> preSimDrawSink = new();
   /// <summary> Glyph co-ords </summary>
@@ -30,7 +30,7 @@ public record ExtrawnersGlyphBrief {
   internal ExtrawnersGlyphBrief(SpawnerGlyph glyph) {
     customName = glyph.customName;
     customDesc = glyph.customDesc;
-    internalName = glyph.internalName; 
+    internalName = glyph.internalName;
     requiredProducts = glyph.requiredProducts;
     preSimDrawInput = glyph.drawInputRawMolecules.Select(m => new Molec(m)).ToList();
     preSimDrawSink = glyph.drawOutputRawMolecules.Select(m => new Molec(m)).ToList();
@@ -42,7 +42,7 @@ public record ExtrawnersGlyphData {
   public HashSet<ApiPair<ApiHexIdx, ApiHexIdx>> holeBonds = new();
   public string? customName = null;
   public string? customDesc = null;
-  public HoleTexturesKind holeTextures = HoleTexturesKind.NORMAL; 
+  public HoleTexturesKind holeTextures = HoleTexturesKind.NORMAL;
   /// <summary> Glyph co-ords </summary>
   public List<Molec> preSimDrawSink = new();
   /// <summary> Glyph co-ords </summary>
@@ -51,6 +51,15 @@ public record ExtrawnersGlyphData {
   public ushort requiredProducts = 0;
   /// <summary> Use this to tell apart different glyphs. or don't. your call </summary>
   public string internalName = "";
+
+  public IEnumerable<Molec> SetHoleFromMolecs {
+    set {
+      foreach (var mol in value) {
+        holeHexes.UnionWith(mol.Atoms.Select(atm => atm.Key));
+        holeBonds.UnionWith(mol.Bonds.Select(bnd => new ApiPair<ApiHexIdx, ApiHexIdx>(bnd.a, bnd.b)));
+      }
+    }
+  }
 
   //
   internal static Resources.HoleGlyph ActualHoleTex(HoleTexturesKind k) {
@@ -71,7 +80,7 @@ public record ExtrawnersGlyphData {
     holeHexes = new(holeHexes.Select(i => i.OM())),
     holeBonds = new(holeBonds.Select(i => new Quintessential.Pair<HexIndex, HexIndex>(i.Left.OM(), i.Right.OM()))),
     customName = customName,
-    customDesc = customDesc, 
+    customDesc = customDesc,
     drawOutputRawMolecules = preSimDrawSink.Select(m => m.OM()).ToList(),
     drawInputRawMolecules = preSimDrawInput.Select(m => m.OM()).ToList(),
     requiredProducts = requiredProducts,
@@ -84,7 +93,7 @@ public record ExtrawnersGlyphState {
   public object? userData;
 
   public Molec ToRelative(Molec absolute) {
-    Molecule omm = absolute.OM().SimCoordsToPart(part); 
+    Molecule omm = absolute.OM().SimCoordsToPart(part);
     return new(omm);
   }
   public Molec RelativeToAbsolute(Molec relative) {
@@ -94,7 +103,7 @@ public record ExtrawnersGlyphState {
   //
   private readonly Part part;
   internal readonly SpawnerState state;
-  internal ExtrawnersGlyphState(ExtrawnersGlyphBrief data, Part part,SpawnerState state,object? userData) {
+  internal ExtrawnersGlyphState(ExtrawnersGlyphBrief data, Part part, SpawnerState state, object? userData) {
     this.data = data;
     this.part = part;
     this.state = state;
