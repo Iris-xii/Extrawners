@@ -40,6 +40,7 @@ internal sealed partial record class SpawnerGlyph {
   internal ProduceData produceData = new();
   internal bool forceTakeoverSequence = false; 
   internal string internalName = "";
+  internal Func<object?> makeUserData = () => null;
   
   internal IEnumerable<Molecule> HexesAndBondsFromMolec {
     set => HexesAndBondsRef(value, ref this.holeHexes, ref this.holeBonds);

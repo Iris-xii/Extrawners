@@ -51,6 +51,9 @@ public record ExtrawnersGlyphData {
   public ushort requiredProducts = 0;
   /// <summary> Use this to tell apart different glyphs. or don't. your call </summary>
   public string internalName = "";
+  /// <summary> Allows you to attach a bit of per-glyph state of your choice!<br/>
+  /// The function must return a fresh object (unrelated to any previous ones) every time it is called. </summary> 
+  public Func<object?> makeUserData = () => null;
 
   public IEnumerable<Molec> SetHoleFromMolecs {
     set {
@@ -84,7 +87,8 @@ public record ExtrawnersGlyphData {
     drawOutputRawMolecules = preSimDrawSink.Select(m => m.OM()).ToList(),
     drawInputRawMolecules = preSimDrawInput.Select(m => m.OM()).ToList(),
     requiredProducts = requiredProducts,
-    internalName = internalName
+    internalName = internalName,
+    makeUserData = makeUserData
   };
 }
 public record ExtrawnersGlyphState {

@@ -33,18 +33,21 @@ internal static class Presets {
       var ass = Assembly.LoadFrom(fileNameFull);
       var maybeIExtPuzzles = ass.GetTypes().Where(type => typeof(IExtrawnersPuzzle).IsAssignableFrom(type) &&
       !type.IsInterface && !type.IsAbstract && type.IsPublic).ToList();
-      if(maybeIExtPuzzles.Count > 1) {
+      if (maybeIExtPuzzles.Count > 1) {
         throw new InvalidDataException("Multiple IExtrawnersPuzzle implementations present. This is not allowed");
-      } else if (maybeIExtPuzzles.Count == 0) {
+      }
+      else if (maybeIExtPuzzles.Count == 0) {
         throw new InvalidDataException("No IExtrawnersPuzzle impl found. (Is the type public?)");
       }
       var iExtPuzzle = maybeIExtPuzzles.First();
-      var activated = (IExtrawnersPuzzle) Activator.CreateInstance(iExtPuzzle);
+      var activated = (IExtrawnersPuzzle)Activator.CreateInstance(iExtPuzzle);
       toReturn = new() {
         extrawnersPuzzleStatic = activated
       };
       var curIdx = 0;
-      foreach(var potentialGlyph in activated.MakeExtrawnersGlyphs()) {
+      foreach (var potentialGlyph in activated.MakeExtrawnersGlyphs(new() {
+        puzzleId = puzzleId
+      })) {
         toReturn.glyphs.Add(potentialGlyph.ToExtrawners(curIdx));
         curIdx += 1;
       }

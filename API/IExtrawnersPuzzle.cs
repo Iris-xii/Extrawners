@@ -14,8 +14,9 @@ using static Extrawners.ExtrawnersMod;
 using static ExtrawnersExt;
 
 using static LogicWhen;
+#nullable enable
 
-public sealed record ProduceArgs {
+public sealed record Produce {
   public bool isSimInitialization;
   public int currentCycle;
   /// <summary> In absolute (sim) co-ords! </summary>
@@ -25,48 +26,74 @@ public sealed record ProduceArgs {
 
   /// <summary> Could this molec be spawned into the sim, or would it be blocked by something? </summary> 
   public bool CouldSpawn(Molec molecAbsolute) => DoesNotOverlap(sim, null, molecAbsolute.OM());
+  /// <summary> Try to spawn/produce this molecule into the sim. Check out 
+  /// <see cref="CouldSpawn"/> to know in advance if it will be successful.</summary> 
+  /// <returns>Whether the molecule could be spawned in.</returns>
+  public bool TryToSpawn(Molec molecAbsolute) {
+    var could = CouldSpawn(molecAbsolute);
+    if (could) { produceMolecs.Add(molecAbsolute); }
+    return could;
+  }
+  /// <summary>Crash the sim, displaying an error message on the transmutation engine.</summary> 
+  public void CrashSim(string message,ApiHexIdx location) => crashSim = new(message,location);
+  /// <summary> 'Progress' the given glyph towards sim completion by progress += amount. </summary> 
+  public void ProgressBy(ExtrawnersGlyphState glyph,int amount) => progressBy.Add(new(glyph,amount)); 
   public void Log(string s) => ExtrawnersMod.Log(s);
 
   //
   internal Sim sim = null!;
-}
-public sealed record ProduceOut() {
-  /// <summary> If present, errors the sim at the specified location with the specified message. </summary>
-  public ApiPair<string, ApiHexIdx>? crashSim = null;
-  /// <summary> In absolute co-ords, a list of molecules to produce next.<br/>
-  /// Use <see cref="ProduceArgs.CouldSpawn"/> before adding a molecule to check if it can be done,
-  /// otherwise molecules may be spawned in occupied spots and crash the sim.</summary>
-  public List<Molec> produceMolecs = new();
-}
-public sealed record SinkArgs {
+  internal List<Molec> produceMolecs = new();
+  internal ApiPair<string, ApiHexIdx>? crashSim = null;
+  internal List<ApiPair<ExtrawnersGlyphState, int>> progressBy = new();
+} 
+public sealed record Sink {
   public int currentCycle;
   /// <summary> In absolute (sim) co-ords! </summary>
   public List<Molec> allMolecsInSim = new();
   public List<ExtrawnersGlyphState> extrawnersGlyphs = new();
   public bool ichorSuppressionActive = false;
 
-  public void Log(string s) => ExtrawnersMod.Log(s);
-}
-public sealed record SinkOut() {
-  /// <summary> Sink these molecules (remove them from the sim) (absolute coords!) </summary>
-  public List<Molec> sinkMolecules = new();
-  /// <summary> Progress the Glyph's requiredProducts by this amount </summary>
-  public List<ApiPair<ExtrawnersGlyphState, int>> progressBy = new();
-  /// <summary> If present, errors the sim at the specified location with the specified message. </summary>
-  public ApiPair<string, ApiHexIdx>? crashSim = null;
-}
-public sealed record DisplayArgs {
+  public void Log(string s) => ExtrawnersMod.Log(s);  
+  /// <summary> Could the given molec be sunk, or is it grabbed? </summary> 
+  public bool CouldSink(Molec molecAbsolute) {
+    Molecule? simMolSunk = sim.field_3823
+        .Where(simMol => new Molec(simMol).MatchesExact(molecAbsolute))
+        .FirstOrDefault();
+    if (simMolSunk is null) return true;
+    return !sim.MoleculeHeld(simMolSunk);
+  }
+  /// <summary> Try to sink this molecule. Check out 
+  /// <see cref="CouldSink"/> to know in advance if it will be successful.</summary> 
+  /// <returns>Whether the molecule was able to be sunk/output.</returns>
+  public bool TryToSink(Molec molecAbsolute) {
+    var could = CouldSink(molecAbsolute);
+    if(could) {sinkMolecules.Add(molecAbsolute);}
+    return could;
+  }
+  /// <summary> 'Progress' the given glyph towards sim completion by progress += amount. </summary> 
+  public void ProgressBy(ExtrawnersGlyphState glyph,int amount) => progressBy.Add(new(glyph,amount));  
+  /// <summary>Crash the sim, displaying an error message on the transmutation engine.</summary> 
+  public void CrashSim(string message,ApiHexIdx location) => crashSim = new(message,location);
+  //
+  internal Sim sim = null!;
+  internal List<Molec> sinkMolecules = new();
+  internal List<ApiPair<ExtrawnersGlyphState, int>> progressBy = new();
+  internal ApiPair<string, ApiHexIdx>? crashSim = null;
+} 
+public sealed record Display {
   /// <summary> A float that increases over time, for animation purposes </summary>
-  public float accumulatedTime; 
+  public float accumulatedTime;
   public ExtrawnersGlyphState extrawnersGlyphBeingRendered = null!;
   public bool ichorSuppressionActive = false;
 
   public void Log(string s) => ExtrawnersMod.Log(s);
-}
-public sealed record DisplayOut() {
-  /// <summary> Relative (part)! coords.<br/>
-  /// All of these molecules will be rendered "darkened", like an output preview. </summary>
-  public List<Molec> renderAsIfSinkRelativeToGlyph = new();
+
+  /// <summary> This molecule will be rendered "darkened", like an output preview. </summary>
+  public void RenderAsSink(Molec molecRelative) => renderAsIfSinkRelativeToGlyph.Add(molecRelative);
+  internal List<Molec> renderAsIfSinkRelativeToGlyph = new();
+} 
+public sealed record MakeGlyphData {
+  public string puzzleId = "";
 }
 
 /// <summary>
@@ -75,16 +102,16 @@ public sealed record DisplayOut() {
 public interface IExtrawnersPuzzle {
   /// <summary> Called on sim start/reset, must return a 'fresh' copy with brand new state </summary> 
   public IExtrawnersPuzzle MakeNew();
-  public IEnumerable<ExtrawnersGlyphData> MakeExtrawnersGlyphs();
-  /// <summary> Allows you to attach a bit of per-glyph state of your choice. </summary> 
-  public object? InitializePerGlyphUserData(ExtrawnersGlyphBrief glyph, string puzzleId);
+  public IEnumerable<ExtrawnersGlyphData> MakeExtrawnersGlyphs(MakeGlyphData args); 
   /// <summary> Called once at sim start, and then every time molecs may be produced </summary> 
-  public ProduceOut Produce(ProduceArgs args);
-  public SinkOut Sink(SinkArgs args);
+  public void Produce(Produce args);
+  /// <summary> Called to decide what molecules should be sunk/output </summary> 
+  public void Sink(Sink args);
   /// <summary> Called to decide what molecules to render during the sim, such as 
   /// previews over the outputs/sinks matching what they expect. <br/>
   /// Unlike other functions, this is called once per individual glyph! </summary> 
-  public DisplayOut Display(DisplayArgs args);
+  public void Display(Display args);
+  
   public List<int> InputsToRemove();
   public List<int> OutputsToRemove();
 }

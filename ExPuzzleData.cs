@@ -64,7 +64,7 @@ internal sealed record class SimState {
         .Where(pdg => SpawnerGlyph.partTypes[pdg.partTypesIndex].field_1528 == partType.field_1528);
       foreach (var matchingSpawnerGlyph in matchingThisPart) {
         this.spawnerStates[anyP] = new(matchingSpawnerGlyph) {
-          userData = pData.extrawnersPuzzleStatic?.InitializePerGlyphUserData(new(matchingSpawnerGlyph), sol.Puzzle().PuzzleId())
+          userData = matchingSpawnerGlyph.makeUserData()
         };
       }
     }
@@ -111,12 +111,14 @@ internal sealed record class SimState {
         }
       }
       if (extrawnersPuzzle is IExtrawnersPuzzle EP && seb.method_503() != enum_128.Stopped) {
-        var displayOut = EP.Display(new() {
+        List<Molec> renderAsIfSinkRelativeToGlyph = new();
+        EP.Display(new() {
           accumulatedTime = seb.AccumulatedTime(),
           ichorSuppressionActive = ExtransmutationsCompat.isIchorSuppressionActive,
           extrawnersGlyphBeingRendered = new(new(data), part, spawnerState, spawnerState.userData),
+          renderAsIfSinkRelativeToGlyph = renderAsIfSinkRelativeToGlyph,
         });
-        foreach (var m in displayOut.renderAsIfSinkRelativeToGlyph) {
+        foreach (var m in renderAsIfSinkRelativeToGlyph) {
           SpawnerGlyph.DrawMolAsIfOutput(
             m.OM(),
             seb, pss, renderer, pos, part, animateMoleculesRaw: new List<Molecule>(),
@@ -183,18 +185,25 @@ internal sealed record class SimState {
       }
     }
     if (when == FIRST_HALF && extrawnersPuzzle is IExtrawnersPuzzle EP) { // IExtrawnersPuzzle
-      var sinkOut = EP.Sink(new() {
+      ApiPair<string, ApiHexIdx>? crashSim = null;
+      List<ApiPair<ExtrawnersGlyphState, int>> progressBy = new();
+      List<Molec> sinkMolecules = new();
+      EP.Sink(new() {
         currentCycle = sim.Cycle(),
         ichorSuppressionActive = ExtransmutationsCompat.isIchorSuppressionActive,
         extrawnersGlyphs = allExtrawnersGlyphsApi,
         allMolecsInSim = allMolecsInSimApi,
+        sim = sim,
+        crashSim = crashSim,
+        progressBy = progressBy,
+        sinkMolecules = sinkMolecules,
       });
-      if (sinkOut.crashSim is ApiPair<string, ApiHexIdx> crash) {
+      if (crashSim is ApiPair<string, ApiHexIdx> crash) {
         var message = crash.Left;
         var where = crash.Right.OM();
         sim.method_1854_crash(message, where, where);
       }
-      foreach (var molecWantingSink in sinkOut.sinkMolecules) {
+      foreach (var molecWantingSink in sinkMolecules) {
         Molecule? simMolSunk = sim.field_3823
         .Where(simMol => new Molec(simMol).MatchesExact(molecWantingSink))
         .FirstOrDefault();
@@ -204,7 +213,7 @@ internal sealed record class SimState {
           sim.RemoveMolecule(simMolSunk);
         }
       }
-      foreach (var progress in sinkOut.progressBy) {
+      foreach (var progress in progressBy) {
         var state = progress.Left.state;
         var progBy = progress.Right;
         var sum = state.validOutputsSank + progBy;
@@ -234,20 +243,33 @@ internal sealed record class SimState {
     if ((when == MID_CYCLE_B4_ANIM || (when == PRE_CYCLE && sim.Cycle() == 0))
     && extrawnersPuzzle is IExtrawnersPuzzle EP2) {
       var isInit = when == PRE_CYCLE;
-      var prodOut = EP2.Produce(new() {
+      ApiPair<string, ApiHexIdx>? prodCrashSim = null;
+      List<ApiPair<ExtrawnersGlyphState, int>> progressBy = new();
+      List<Molec> produceMolecs = new();
+      EP2.Produce(new() {
         ichorSuppressionActive = ExtransmutationsCompat.isIchorSuppressionActive,
         isSimInitialization = isInit,
         allMolecsInSim = allMolecsInSimApi,
         currentCycle = sim.Cycle(),
         extrawnersGlyphs = allExtrawnersGlyphsApi,
         sim = sim,
+        crashSim = prodCrashSim,
+        progressBy = progressBy,
+        produceMolecs = produceMolecs,
       });
-      if (prodOut.crashSim is ApiPair<string, ApiHexIdx> crash) {
+      if (prodCrashSim is ApiPair<string, ApiHexIdx> crash) {
         var message = crash.Left;
         var where = crash.Right.OM();
         sim.method_1854_crash(message, where, where);
       }
-      wantingToSpawnAbsolute.AddRange(prodOut.produceMolecs.Select(m => m.OM()));
+      foreach (var progress in progressBy) {
+        var state = progress.Left.state;
+        var progBy = progress.Right;
+        var sum = state.validOutputsSank + progBy;
+        if (sum < 0) sum = 0;
+        state.validOutputsSank = sum;
+      }
+      wantingToSpawnAbsolute.AddRange(produceMolecs.Select(m => m.OM()));
     }
     if (when.FireGlyph() || (when == PRE_CYCLE && sim.Cycle() == 0)) {
       foreach (var molec in wantingToSpawnAbsolute) {
