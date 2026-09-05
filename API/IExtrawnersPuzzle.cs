@@ -41,7 +41,12 @@ public sealed record Produce {
     return could;
   }
   /// <summary>Crash the sim, displaying an error message on the transmutation engine.</summary> 
-  public void CrashSim(string message,ApiHexIdx location) => crashSim = new() {doCrash= true,message = message,location = location};
+  public void CrashSim(string message, ApiHexIdx location) {
+    crashSim.message = message;
+    crashSim.location = location;
+    crashSim.doCrash = true; 
+  }
+
   /// <summary> 'Progress' the given glyph towards sim completion by progress += amount. </summary> 
   public void ProgressBy(ExtrawnersGlyphState glyph,int amount) => progressBy.Add(new(glyph,amount)); 
   public void Log(string s) => ExtrawnersMod.Log(s);
@@ -49,7 +54,7 @@ public sealed record Produce {
   //
   internal Sim sim = null!;
   internal List<Molec> produceMolecs = new();
-  internal CrashSim? crashSim = null;
+  internal CrashSim crashSim = new();
   internal List<ApiPair<ExtrawnersGlyphState, int>> progressBy = new();
 } 
 public sealed record Sink {
@@ -79,12 +84,16 @@ public sealed record Sink {
   /// <summary> 'Progress' the given glyph towards sim completion by progress += amount. </summary> 
   public void ProgressBy(ExtrawnersGlyphState glyph,int amount) => progressBy.Add(new(glyph,amount));  
   /// <summary>Crash the sim, displaying an error message on the transmutation engine.</summary> 
-  public void CrashSim(string message,ApiHexIdx location) => crashSim = new() {doCrash= true,message = message,location = location};
+    public void CrashSim(string message, ApiHexIdx location) {
+    crashSim.message = message;
+    crashSim.location = location;
+    crashSim.doCrash = true; 
+  }
   //
   internal Sim sim = null!;
   internal List<Molec> sinkMolecules = new();
   internal List<ApiPair<ExtrawnersGlyphState, int>> progressBy = new();
-  internal CrashSim? crashSim = null;
+  internal CrashSim crashSim = new();
 } 
 public sealed record Display {
   /// <summary> A float that increases over time, for animation purposes </summary>
