@@ -16,6 +16,11 @@ using static ExtrawnersExt;
 using static LogicWhen;
 #nullable enable
 
+internal sealed record CrashSim {
+  internal string message = "";
+  internal ApiHexIdx location;
+}
+
 public sealed record Produce {
   public bool isSimInitialization;
   public int currentCycle;
@@ -35,7 +40,7 @@ public sealed record Produce {
     return could;
   }
   /// <summary>Crash the sim, displaying an error message on the transmutation engine.</summary> 
-  public void CrashSim(string message,ApiHexIdx location) => crashSim = new(message,location);
+  public void CrashSim(string message,ApiHexIdx location) => crashSim = new() {message = message,location = location};
   /// <summary> 'Progress' the given glyph towards sim completion by progress += amount. </summary> 
   public void ProgressBy(ExtrawnersGlyphState glyph,int amount) => progressBy.Add(new(glyph,amount)); 
   public void Log(string s) => ExtrawnersMod.Log(s);
@@ -43,7 +48,7 @@ public sealed record Produce {
   //
   internal Sim sim = null!;
   internal List<Molec> produceMolecs = new();
-  internal ApiPair<string, ApiHexIdx>? crashSim = null;
+  internal CrashSim? crashSim = null;
   internal List<ApiPair<ExtrawnersGlyphState, int>> progressBy = new();
 } 
 public sealed record Sink {
@@ -73,12 +78,12 @@ public sealed record Sink {
   /// <summary> 'Progress' the given glyph towards sim completion by progress += amount. </summary> 
   public void ProgressBy(ExtrawnersGlyphState glyph,int amount) => progressBy.Add(new(glyph,amount));  
   /// <summary>Crash the sim, displaying an error message on the transmutation engine.</summary> 
-  public void CrashSim(string message,ApiHexIdx location) => crashSim = new(message,location);
+  public void CrashSim(string message,ApiHexIdx location) => crashSim = new() {message = message,location = location};
   //
   internal Sim sim = null!;
   internal List<Molec> sinkMolecules = new();
   internal List<ApiPair<ExtrawnersGlyphState, int>> progressBy = new();
-  internal ApiPair<string, ApiHexIdx>? crashSim = null;
+  internal CrashSim? crashSim = null;
 } 
 public sealed record Display {
   /// <summary> A float that increases over time, for animation purposes </summary>
