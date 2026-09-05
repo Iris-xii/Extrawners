@@ -185,7 +185,7 @@ internal sealed record class SimState {
       }
     }
     if (when == FIRST_HALF && extrawnersPuzzle is IExtrawnersPuzzle EP) { // IExtrawnersPuzzle
-      CrashSim? crashSim = null;
+      CrashSim crashSim = new();
       List<ApiPair<ExtrawnersGlyphState, int>> progressBy = new();
       List<Molec> sinkMolecules = new();
       EP.Sink(new() {
@@ -198,8 +198,8 @@ internal sealed record class SimState {
         progressBy = progressBy,
         sinkMolecules = sinkMolecules,
       });
-      if (crashSim is CrashSim crash) { 
-        sim.method_1854_crash(crash.message, crash.location.OM(), crash.location.OM());
+      if (crashSim.doCrash) { 
+        sim.method_1854_crash(crashSim.message, crashSim.location.OM(), crashSim.location.OM());
       }
       foreach (var molecWantingSink in sinkMolecules) {
         Molecule? simMolSunk = sim.field_3823
@@ -242,7 +242,7 @@ internal sealed record class SimState {
     if ((when == MID_CYCLE_B4_ANIM || (when == PRE_CYCLE && sim.Cycle() == 0))
     && extrawnersPuzzle is IExtrawnersPuzzle EP2) {
       var isInit = when == PRE_CYCLE;
-      CrashSim? prodCrashSim = null;
+      CrashSim crashSim = new();
       List<ApiPair<ExtrawnersGlyphState, int>> progressBy = new();
       List<Molec> produceMolecs = new();
       EP2.Produce(new() {
@@ -252,12 +252,12 @@ internal sealed record class SimState {
         currentCycle = sim.Cycle(),
         extrawnersGlyphs = allExtrawnersGlyphsApi,
         sim = sim,
-        crashSim = prodCrashSim,
+        crashSim = crashSim,
         progressBy = progressBy,
         produceMolecs = produceMolecs,
       });
-      if (prodCrashSim is CrashSim crash) { 
-        sim.method_1854_crash(crash.message, crash.location.OM(), crash.location.OM());
+      if (crashSim.doCrash) { 
+        sim.method_1854_crash(crashSim.message, crashSim.location.OM(), crashSim.location.OM());
       }
       foreach (var progress in progressBy) {
         var state = progress.Left.state;

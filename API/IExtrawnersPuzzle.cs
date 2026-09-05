@@ -17,6 +17,7 @@ using static LogicWhen;
 #nullable enable
 
 internal sealed record CrashSim {
+  internal bool doCrash = false;
   internal string message = "";
   internal ApiHexIdx location;
 }
@@ -40,7 +41,7 @@ public sealed record Produce {
     return could;
   }
   /// <summary>Crash the sim, displaying an error message on the transmutation engine.</summary> 
-  public void CrashSim(string message,ApiHexIdx location) => crashSim = new() {message = message,location = location};
+  public void CrashSim(string message,ApiHexIdx location) => crashSim = new() {doCrash= true,message = message,location = location};
   /// <summary> 'Progress' the given glyph towards sim completion by progress += amount. </summary> 
   public void ProgressBy(ExtrawnersGlyphState glyph,int amount) => progressBy.Add(new(glyph,amount)); 
   public void Log(string s) => ExtrawnersMod.Log(s);
@@ -78,7 +79,7 @@ public sealed record Sink {
   /// <summary> 'Progress' the given glyph towards sim completion by progress += amount. </summary> 
   public void ProgressBy(ExtrawnersGlyphState glyph,int amount) => progressBy.Add(new(glyph,amount));  
   /// <summary>Crash the sim, displaying an error message on the transmutation engine.</summary> 
-  public void CrashSim(string message,ApiHexIdx location) => crashSim = new() {message = message,location = location};
+  public void CrashSim(string message,ApiHexIdx location) => crashSim = new() {doCrash= true,message = message,location = location};
   //
   internal Sim sim = null!;
   internal List<Molec> sinkMolecules = new();
