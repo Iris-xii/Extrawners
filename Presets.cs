@@ -29,8 +29,8 @@ internal static class Presets {
     List<int> outputsToRemove = new();
     ExPuzzleData? toReturn = null;
     var puzzleId = puzzle.field_2766;
-    if (TryGetPuzzleFile($"{puzzleId}.extrawners.dll") is string fileNameFull) {
-      var ass = Assembly.LoadFrom(fileNameFull);
+    if (TryGetPuzzleFile($"{puzzleId}.extrawners.dll") is string fileNameFull) { 
+      var ass = Assembly.LoadFrom(fileNameFull); 
       var maybeIExtPuzzles = ass.GetTypes().Where(type => typeof(IExtrawnersPuzzle).IsAssignableFrom(type) &&
       !type.IsInterface && !type.IsAbstract && type.IsPublic).ToList();
       if (maybeIExtPuzzles.Count > 1) {

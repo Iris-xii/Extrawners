@@ -54,6 +54,10 @@ public record ExtrawnersGlyphData {
   /// <summary> Allows you to attach a bit of per-glyph state of your choice!<br/>
   /// The function must return a fresh object (unrelated to any previous ones) every time it is called. </summary> 
   public Func<object?> makeUserData = () => null;
+  /// <summary> Set the origin of this glyph to a specific 
+  /// location on the board when the puzzle is created.<br/>
+  /// Use this if the locations chosen by default create overlapping parts. </summary>
+  public ApiHexIdx setOriginTo = new();
 
   public IEnumerable<Molec> SetHoleFromMolecs {
     set {
@@ -88,7 +92,8 @@ public record ExtrawnersGlyphData {
     drawInputRawMolecules = preSimDrawInput.Select(m => m.OM()).ToList(),
     requiredProducts = requiredProducts,
     internalName = internalName,
-    makeUserData = makeUserData
+    makeUserData = makeUserData,
+    origin = setOriginTo.OM(),
   };
 }
 public record ExtrawnersGlyphState {

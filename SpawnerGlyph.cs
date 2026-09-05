@@ -19,7 +19,7 @@ using static LogicWhen;
 
 
 #nullable enable
-internal sealed partial record class SpawnerGlyph { 
+internal sealed partial record class SpawnerGlyph {
   internal HexIndex origin;
   internal int partTypesIndex = -1;
   internal HashSet<HexIndex> holeHexes = new();
@@ -31,24 +31,26 @@ internal sealed partial record class SpawnerGlyph {
   internal List<Molecule> drawInputRawMolecules = new();
   /// <summary> Preview molecule as if it were an output (sink) </summary>
   internal List<Molecule> drawOutputRawMolecules = new();
-  internal bool fixDisjointMolecules = false; 
+  internal bool fixDisjointMolecules = false;
   /// <summary> If != 0, need this many products to complete the puzzle </summary>
   internal ushort requiredProducts = 0;
   /// <summary> Controls 'sinking' (accepting) of molecules </summary>
   internal SinkData sinkData = new();
   /// <summary> Controls input/production of molecules </summary>
   internal ProduceData produceData = new();
-  internal bool forceTakeoverSequence = false; 
+  internal bool forceTakeoverSequence = false;
   internal string internalName = "";
   internal Func<object?> makeUserData = () => null;
-  
+
   internal IEnumerable<Molecule> HexesAndBondsFromMolec {
     set => HexesAndBondsRef(value, ref this.holeHexes, ref this.holeBonds);
-  }  
+  }
   internal IEnumerable<HexIndex> CollisionHexes() => holeHexes;
   internal SpawnerGlyph(int partTypesIndex) { //I miss `required`
     this.partTypesIndex = partTypesIndex;
-    origin = new HexIndex(partTypesIndex - (partTypesIndex % 2 == 0 ? 0 : 4), partTypesIndex + 1 * 5);
+    if (origin.Q == 0 && origin.R == 0) {
+      origin = new HexIndex(partTypesIndex - (partTypesIndex % 2 == 0 ? 0 : 4), partTypesIndex + 1 * 5);
+    }
   }
 
 
