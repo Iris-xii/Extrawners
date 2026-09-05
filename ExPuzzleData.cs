@@ -218,6 +218,7 @@ internal sealed record class SimState {
         var progBy = progress.Right;
         var sum = state.validOutputsSank + progBy;
         if (sum < 0) sum = 0;
+        if (sum > state.glyph.requiredProducts) sum = state.glyph.requiredProducts;
         state.validOutputsSank = sum;
       }
     }
@@ -267,6 +268,7 @@ internal sealed record class SimState {
         var progBy = progress.Right;
         var sum = state.validOutputsSank + progBy;
         if (sum < 0) sum = 0;
+        if (sum > state.glyph.requiredProducts) sum = state.glyph.requiredProducts;
         state.validOutputsSank = sum;
       }
       wantingToSpawnAbsolute.AddRange(produceMolecs.Select(m => m.OM()));
